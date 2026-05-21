@@ -1,0 +1,87 @@
+// ~/.config/oh-my-openagent/config.jsonc
+// Configuração do oh-my-openagent (omo) — routing por agente.
+{
+  "$schema": "https://ohmyopenagent.com/schema/v1.json",
+
+  // Anti-telemetry do PostHog que o omo inclui por default.
+  "telemetry": {
+    "posthog": {
+      "enabled": false
+    }
+  },
+
+  // Routing por agente. Cada agent map para um (ou mais) modelos opencode.
+  "agents": {
+    "sisyphus": {
+      "model": "opencode/big-pickle",
+      "max_concurrent_tasks": 2,
+      "task_timeout": 300
+    },
+    "prometheus": {
+      "model": "opencode/big-pickle"
+    },
+    "atlas": {
+      "model": "opencode/big-pickle"
+    },
+    "hephaestus": {
+      "model": "opencode/deepseek-v4-flash-free",
+      "fallback": "openrouter/deepseek/deepseek-r1:free"
+    },
+    "oracle": {
+      "model": "opencode/minimax-m2.5-free",
+      "fallback": "opencode/deepseek-v4-flash-free"
+    },
+    "metis": {
+      "model": "opencode/minimax-m2.5-free"
+    },
+    "momus": {
+      "model": "opencode/minimax-m2.5-free"
+    },
+    "librarian": {
+      "model": "opencode/mimo-v2-pro-free",
+      "fallback": "opencode/nemotron-3-super-free"
+    },
+    "explore": {
+      "model": "opencode/nemotron-3-super-free",
+      "fallback": "opencode/big-pickle"
+    },
+    "sisyphus-junior": {
+      "model": "opencode/nemotron-3-super-free"
+    },
+    "multimodal-looker": {
+      "disable": true
+    }
+  },
+
+  // Agentes custom do projeto (definidos em .opencode/agents/).
+  // omo respeita o `model` que o agent frontmatter declarar, mas se omitido,
+  // cai nestes defaults.
+  "custom_agents": {
+    "spec-author": {
+      "model": "opencode/minimax-m2.5-free",
+      "fallback": "opencode/big-pickle"
+    },
+    "test-first-guard": {
+      "model": "opencode/nemotron-3-super-free"
+    },
+    "odata-reviewer": {
+      "model": "opencode/minimax-m2.5-free",
+      "fallback": "opencode/deepseek-v4-flash-free"
+    },
+    "git-keeper": {
+      "model": "opencode/nemotron-3-super-free"
+    },
+    "retrospector": {
+      "model": "opencode/minimax-m2.5-free"
+    },
+    "notion-curator": {
+      "model": "opencode/nemotron-3-super-free"
+    }
+  },
+
+  // Hard limit global pra não estourar quota free.
+  "limits": {
+    "daily_requests_max": 1500,
+    "warn_at_pct": 80
+  }
+}

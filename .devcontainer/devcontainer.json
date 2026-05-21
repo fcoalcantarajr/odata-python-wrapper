@@ -1,0 +1,68 @@
+{
+	"name": "ado-odata-async (Python 3.12 + uv + opencode + omo)",
+	"image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
+
+	// initializeCommand roda no HOST antes do docker run. Pre-cria todos os
+	// paths de bind-mount; Docker recusa bind com source inexistente.
+	"initializeCommand": "mkdir -p '${localEnv:HOME}/.local/share/opencode' '${localEnv:HOME}/.config/opencode' && touch '${localEnv:HOME}/.gitconfig' '${localWorkspaceFolder}/.devcontainer/devcontainer.env'",
+
+	// runArgs --env-file: source canônica de credenciais por-projeto.
+	// AZURE_DEVOPS_PAT (escopo: Analytics read + Work items read) + ORG + PROJECT.
+	"runArgs": ["--env-file", "${localWorkspaceFolder}/.devcontainer/devcontainer.env"],
+
+	// Sem bloco `features`: em ambiente corporativo (BNB) o credential helper
+	// docker-credential-desktop retorna erro em vez de credenciais vazias pro
+	// host ghcr.io, e o @devcontainers/cli interpreta isso como falha de auth
+	// (mesmo em pulls anônimos que o docker daemon faria sem problema).
+	// uv/bun/gh são instalados no postCreate.sh direto dos origins primários
+	// (astral.sh, bun.sh, cli.github.com). git já vem no bookworm base.
+
+	"mounts": [
+		// auth.json do opencode persiste entre rebuilds (inclui OAuth do Notion MCP - Step 10).
+		// Bind RW (não volume nomeado) pra poder inspecionar do host quando der ruim no auth.
+		"type=bind,source=${localEnv:HOME}/.local/share/opencode,target=/home/vscode/.local/share/opencode",
+		// Config do opencode (opencode.jsonc + oh-my-opencode.jsonc) persiste do host.
+		"type=bind,source=${localEnv:HOME}/.config/opencode,target=/home/vscode/.config/opencode",
+		// Identidade git do host (user.name, user.email, signing key) propagada readonly.
+		"type=bind,source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,readonly"
+	],
+
+	"remoteEnv": {
+		// PATH prefixado: ~/.local/bin (uv) + ~/.bun/bin (bun) pra bins instaladas
+		// via postCreate.sh aparecerem em terminais novos.
+		"PATH": "/home/vscode/.local/bin:/home/vscode/.bun/bin:${containerEnv:PATH}",
+		// HR governance: desliga telemetria do omo.
+		"OMO_DISABLE_POSTHOG": "1",
+		"PYTHONDONTWRITEBYTECODE": "1",
+		"PYTHONUNBUFFERED": "1",
+		"UV_LINK_MODE": "copy"
+	},
+
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"charliermarsh.ruff",
+				"ms-python.mypy-type-checker",
+				"tamasfe.even-better-toml",
+				"EditorConfig.EditorConfig",
+				"sst-dev.opencode"
+			],
+			"settings": {
+				"python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+				"python.terminal.activateEnvironment": false,
+				"[python]": {
+					"editor.formatOnSave": true,
+					"editor.defaultFormatter": "charliermarsh.ruff"
+				},
+				"ruff.organizeImports": true,
+				"mypy-type-checker.args": ["--strict"],
+				"terminal.integrated.defaultProfile.linux": "bash"
+			}
+		}
+	},
+
+	"postCreateCommand": "bash .devcontainer/postCreate.sh",
+	"remoteUser": "vscode"
+}

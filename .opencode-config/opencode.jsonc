@@ -1,0 +1,42 @@
+// ~/.config/opencode/opencode.jsonc
+// Configuração GLOBAL do opencode. Não contém segredos.
+{
+  "$schema": "https://opencode.ai/schema/v1.json",
+
+  // Telemetria OFF (training opt-in via opencode.ai/auth e accept_training_opt_in_via_zen).
+  "telemetry": {
+    "enabled": false
+  },
+
+  // Providers ativos. opencode hospeda routing pros modelos free.
+  "providers": {
+    "opencode": {
+      "enabled": true
+      // Modelos free aceitos via Zen auth + training opt-in.
+      // Catalogo: opencode/big-pickle, opencode/deepseek-v4-flash-free,
+      //          opencode/minimax-m2.5-free, opencode/mimo-v2-pro-free,
+      //          opencode/nemotron-3-super-free
+    },
+    "openrouter": {
+      "enabled": true
+      // Só usado como fallback do hephaestus (deepseek-r1:free).
+      // API key vem de OPENROUTER_API_KEY no .env (não commitado).
+    }
+  },
+
+  // Sessões: compact automático quando contexto ultrapassa 75%.
+  "sessions": {
+    "autoCompact": true,
+    "autoCompactThreshold": 0.75
+  },
+
+  // Permissions globais (default; sobrescrito por agent frontmatter).
+  "permission": {
+    "bash": {
+      "git push --force *": "deny",
+      "git commit --no-verify *": "deny",
+      "rm -rf /": "deny",
+      "sudo *": "deny"
+    }
+  }
+}
