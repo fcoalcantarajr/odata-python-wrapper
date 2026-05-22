@@ -15,7 +15,7 @@ permission:
     "cat *": allow
     "grep *": allow
     "*": deny
-  task: false
+  task: deny
   webfetch: deny
   skill:
     spec-driven-development: allow

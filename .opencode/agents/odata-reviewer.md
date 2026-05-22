@@ -19,7 +19,7 @@ permission:
     "ls *": allow
     "cat *": allow
     "*": deny
-  task: false
+  task: deny
   webfetch: deny
   skill:
     ado-odata-gotchas: allow

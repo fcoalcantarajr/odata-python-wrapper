@@ -1,7 +1,7 @@
 // ~/.config/opencode/opencode.jsonc
 // Configuração GLOBAL do opencode. Não contém segredos.
 {
-  "$schema": "https://opencode.ai/schema/v1.json",
+  "$schema": "https://opencode.ai/config.json",
 
   // Telemetria OFF (training opt-in via opencode.ai/auth e accept_training_opt_in_via_zen).
   "telemetry": {

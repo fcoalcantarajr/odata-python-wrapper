@@ -1,7 +1,7 @@
 // ~/.config/oh-my-openagent/config.jsonc
 // Configuração do oh-my-openagent (omo) — routing por agente.
 {
-  "$schema": "https://ohmyopenagent.com/schema/v1.json",
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
 
   // Anti-telemetry do PostHog que o omo inclui por default.
   "telemetry": {

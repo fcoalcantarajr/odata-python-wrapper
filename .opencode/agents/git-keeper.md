@@ -18,7 +18,7 @@ permission:
     "cat *": allow
     "grep *": allow
     "*": deny
-  task: false
+  task: deny
   webfetch: deny
   skill:
     git-discipline: allow
