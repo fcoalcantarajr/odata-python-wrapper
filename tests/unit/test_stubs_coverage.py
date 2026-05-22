@@ -13,9 +13,22 @@ from ado_odata_async.entities._base import ODataEntity
 
 @pytest.mark.asyncio
 async def test_parse_response_stub() -> None:
-    """parse_response currently raises NotImplementedError (SPEC-002)."""
-    with pytest.raises(NotImplementedError):
-        await _http.parse_response(None)  # type: ignore[arg-type]  # reason: stub ignores arg
+    """parse_response is implemented (SPEC-002)."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    import aiohttp
+    from yarl import URL
+
+    resp = MagicMock(spec=aiohttp.ClientResponse)
+    resp.status = 200
+    resp.content_type = "application/json"
+    resp.headers = {}
+    resp.url = URL("http://mock.url/")
+    resp.json = AsyncMock(return_value={"value": []})
+    resp.text = AsyncMock(return_value="")
+    result = await _http.parse_response(resp)  # type: ignore[arg-type]  # reason: MagicMock spec mismatch
+    assert isinstance(result, dict)
+    assert result["value"] == []
 
 
 @pytest.mark.asyncio
