@@ -1,0 +1,37 @@
+"""WorkItem Pydantic model — frozen+strict+extra=forbid per HR-4."""
+
+from __future__ import annotations
+
+from typing import Literal
+
+from pydantic import Field, field_validator
+
+from ado_odata_async.entities._base import ODataEntity
+
+WORK_ITEM_TYPES: tuple[str, ...] = (
+    "Bug",
+    "User Story",
+    "Task",
+    "Feature",
+    "Epic",
+)
+
+
+class WorkItem(ODataEntity):
+    """ADO Analytics WorkItem entity.
+
+    Fields based on OData $metadata for the WorkItem entity set.
+    frozen+strict+extra=forbid inherited from ODataEntity (HR-4).
+    """
+
+    WorkItemId: int = Field(gt=0)
+    Title: str
+    WorkItemType: Literal["Bug", "User Story", "Task", "Feature", "Epic"]
+
+    @field_validator("WorkItemType")
+    @classmethod
+    def _validate_work_item_type(cls, v: str) -> str:
+        if v not in WORK_ITEM_TYPES:
+            msg = f"WorkItemType must be one of {WORK_ITEM_TYPES}, got {v!r}"
+            raise ValueError(msg)
+        return v

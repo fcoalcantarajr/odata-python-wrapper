@@ -2,4 +2,8 @@
 
 from __future__ import annotations
 
-__all__: list[str] = []
+from ado_odata_async.entities._workitem import WorkItem
+
+__all__: list[str] = [
+    "WorkItem",
+]

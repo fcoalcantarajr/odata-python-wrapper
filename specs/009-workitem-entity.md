@@ -38,7 +38,7 @@ Then instance.WorkItemId is int > 0
 ```
 Given OData JSON row with unknown field "FutureField"
 When WorkItem.model_validate(row)
-Then pydantic.ValidationError é levantado com "Extra inputs are not permitted"
+Then pydantic.ValidationError is raised with "Extra inputs are not permitted"
 ```
 
 ### AC-3: strict type enforcement
@@ -46,7 +46,7 @@ Then pydantic.ValidationError é levantado com "Extra inputs are not permitted"
 ```
 Given OData JSON row with WorkItemId="abc" (string instead of int)
 When WorkItem.model_validate(row)
-Then pydantic.ValidationError é levantado
+Then pydantic.ValidationError is raised
 ```
 
 ### AC-4: fetch by ID returns WorkItem
@@ -54,7 +54,7 @@ Then pydantic.ValidationError é levantado
 ```
 Given mock HTTP returns WorkItem JSON for id=42
 When client.get_workitem(42)
-Then retorna WorkItem com WorkItemId=42
+Then returns WorkItem with WorkItemId=42
 ```
 
 ### AC-5: frozen=True impede mutation
@@ -62,12 +62,34 @@ Then retorna WorkItem com WorkItemId=42
 ```
 Given WorkItem instance
 When instance.Title = "new"
-Then TypeError é levantado (frozen)
+Then TypeError is raised (frozen)
 ```
 
 ## INVEST self-score
 
-Média: 8.7/10
+- **I**ndependent: 9/10 — Depende do ODataEntity base (SPEC-001) e pydantic, mas não de outras entities; autocontido em módulo único.
+- **N**egotiable: 8/10 — Lista de campos e detalhes de validação são negociáveis; frozen+strict+extra=forbid é fixo (HR-4).
+- **V**aluable: 10/10 — Sem entities tipadas, consumidores parseiam raw dicts; schema drift fica indetectável até runtime.
+- **E**stimable: 9/10 — Modelo Pydantic ~40 linhas + um método no client; padrão bem conhecido.
+- **S**mall: 8/10 — ~80 linhas no total (test + model + método client); cabe em uma sessão.
+- **T**estable: 10/10 — Todos os ACs testáveis com aioresponses + validação pydantic direta.
+
+Média: 9.0/10
+
+## Out-of-scope
+
+- Outros entity sets (WorkItemRevisions, WorkItemSnapshot, etc.) — ficam para specs futuras.
+- `$expand=Revisions` ou navegação — bloqueado pelo ADO (gotcha 5 / HR-14).
+- Bulk CRUD / mutation — ADO Analytics é read-only.
+- v2.0 compatibility (HR-19 fixa v4.0-preview).
+- `WorkItemType` como Pydantic enum — mantido como `Literal` string por simplicidade.
+
+## NFRs
+
+- **Performance**: Model instantiation < 1ms per row em ambiente mock; sem blocking I/O.
+- **Security**: Dados de validação não expõem PAT; sem logging de campos do modelo.
+- **Observability**: ValidationError é propagada com mensagem clara; `__repr__` do modelo omite dados sensíveis.
+- **Maintainability**: Novo modelo = novo arquivo em `entities/` + re-export em `__init__.py`.
 
 ## Test plan
 

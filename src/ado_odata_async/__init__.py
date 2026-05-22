@@ -1,6 +1,7 @@
 """Async Python wrapper for Azure DevOps Analytics OData (v4.0-preview)."""
 
 from ado_odata_async.client import ODATA_VERSION, AdoODataClient
+from ado_odata_async.entities import WorkItem
 from ado_odata_async.exceptions import (
     AdoODataError,
     AuthenticationError,
@@ -12,6 +13,7 @@ from ado_odata_async.exceptions import (
 __all__ = [
     "AdoODataClient",
     "ODATA_VERSION",
+    "WorkItem",
     "AdoODataError",
     "AuthenticationError",
     "BadRequestError",

@@ -12,6 +12,7 @@ from yarl import URL
 
 from ado_odata_async._http import build_url
 from ado_odata_async.auth import mask_pat
+from ado_odata_async.entities import WorkItem
 from ado_odata_async.pagination import iter_pages
 
 logger = logging.getLogger(__name__)
@@ -73,6 +74,28 @@ class AdoODataClient:
         async with self._session.get(url) as resp:
             resp.raise_for_status()
             return cast(dict[str, Any], await resp.json())
+
+    async def get_workitem(self, id_: int) -> WorkItem:
+        """Fetch a single WorkItem by its WorkItemId.
+
+        Args:
+            id_: The WorkItemId to fetch.
+
+        Returns:
+            WorkItem instance parsed from the OData response.
+
+        Raises:
+            IndexError: If no WorkItem with the given id_ is found.
+            pydantic.ValidationError: If the response doesn't match the model.
+        """
+        data = await self.get(
+            "WorkItems",
+            **{
+                "$filter": f"WorkItemId eq {id_}",
+                "$select": "WorkItemId,Title,WorkItemType",
+            },
+        )
+        return WorkItem.model_validate(data["value"][0])
 
     def paginate(
         self,
