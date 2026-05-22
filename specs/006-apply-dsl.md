@@ -96,6 +96,13 @@ Then retorna None
 
 ## INVEST self-score
 
+- **I**ndependent: 9/10 — Não depende de outras specs; define o builder `Apply` isoladamente (apenas referência FilterExpr de SPEC-005 como input).
+- **N**egotiable: 8/10 — Nomes de método e ordem de composição são negociáveis, mas a estrutura `groupby → filter → aggregate` é fixa por definição OData.
+- **V**aluable: 9/10 — Developer pode compor `$apply` sem string concat manual; valor direto pro caso de uso WorkItemSnapshot.
+- **E**stimable: 9/10 — 4 métodos públicos (groupby, filter, aggregate, validate), escopo claro, < 1 dia de impl.
+- **S**mall: 8/10 — Cabe em uma sessão, mas o `_serialize.py` (SPEC-007) pode forçar pequeno refactor depois.
+- **T**estable: 10/10 — Todos os 8 AC têm Then com igualdade de string, exceção nomeada ou substring; 100% testável em unidade.
+
 Média: 8.8/10
 
 ## Out-of-scope

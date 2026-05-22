@@ -27,7 +27,7 @@ As a developer using the ADO Analytics OData client, I want all query options se
 ```
 Given query = {"$filter": "x eq 1", "$top": "10", "$apply": "groupby((y))"}
 When serialize(query)
-Then URL query string contém "$apply" antes de "$filter" antes de "$top"
+Then the serialized query string matches the regex `\$apply=.*&\$filter=.*&\$top=.*`
 ```
 
 ### AC-2: full order
@@ -62,9 +62,28 @@ When serialize(query)
 Then result is ""
 ```
 
+## NFRs
+
+- **Performance:** Serialização de 7 query options completa em < 1ms (função pura sem IO, sem alocações pesadas).
+- **Security:** N/A — serialização é puramente string; nenhum dado sensível é logado nem transita aqui.
+- **Observability:** Log DEBUG pode emitir o dicionário de entrada e a query string serializada (sem expor secrets).
+
 ## INVEST self-score
 
+- **I**ndependent: 10/10 — spec autocontido; depende apenas do módulo `query/_serialize.py` que ainda não existe.
+- **N**egotiable:  9/10 — ordem canônica é fixa (HR-9), mas tratamento de unknown options poderia ser diferente.
+- **V**aluable:    10/10 — sem isso toda request com >1 opção quebra com HTTP 400.
+- **E**stimable:   9/10 — escopo claro, ~1h de implementação.
+- **S**mall:       9/10 — módulo único, sem dependências externas.
+- **T**estable:    10/10 — função pura, 5 ACs com assert de string.
+
 Média: 9.5/10
+
+## Out-of-scope
+
+- Validação semântica dos valores das query options (ex: se `$top` é número válido).
+- Formatação de valores de filtro (datas, aspas simples) — coberto em specs de filter/apply.
+- Serialização de `$batch` requests — coberto em spec de batch.
 
 ## Test plan
 

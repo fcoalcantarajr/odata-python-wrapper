@@ -57,7 +57,7 @@ check "datetime literal prefix (HR-11)"   "datetime'"                           
 # 6. \$expand=Revisions
 check '\$expand=Revisions (HR-14)'         '\\$expand=Revisions'                         'src/**'
 # 7. requests/urllib
-check "sync requests in src (HR-6)"       '^\s*(import|from)\s+(requests|urllib)\b'    'src/**'
+check "sync requests in src (HR-6)"       '^\s*(import|from)\s+(requests|urllib(?!\.parse))\b'    'src/**'
 # 8. print(...pat...)
 check "PAT leak in print (HR-16)"         'print\([^)]*\bpat\b[^)]*\)'                  'src/**'
 # 9. v2.0 literal
