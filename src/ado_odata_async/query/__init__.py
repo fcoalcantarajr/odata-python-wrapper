@@ -2,4 +2,6 @@
 
 from __future__ import annotations
 
-__all__: list[str] = []
+from ado_odata_async.query._filter import Filter
+
+__all__: list[str] = ["Filter"]
