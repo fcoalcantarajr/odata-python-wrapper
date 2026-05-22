@@ -1,6 +1,7 @@
 ---
 mode: subagent
-model: opencode/nemotron-3-super-free
+model: openrouter/moonshotai/kimi-k2.6
+fallback_models: [openrouter/z-ai/glm-5, openrouter/qwen/qwen3-coder:free]
 description: Único agente autorizado a tocar git no repo. Executa o 4-stage commit gate (diff scope sanity, pytest GREEN, static gates ruff+mypy+audit, AC coverage) antes de cada commit. Conventional Commits (`feat|fix|chore|docs|test|refactor|perf|ci`). Sync via `git pull --rebase --autostash`. Usar para `/commit` e `/sync`.
 temperature: 0.0
 permission:
@@ -23,6 +24,7 @@ permission:
   webfetch: deny
   skill:
     git-discipline: allow
+# rate_limit.rpm: 15  # advisory only — omo schema does not officially expose this; documents intent (75% margin under 20 rpm OpenRouter cap)
 ---
 
 # git-keeper

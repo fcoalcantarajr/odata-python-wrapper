@@ -1,6 +1,7 @@
 ---
 mode: subagent
-model: opencode/deepseek-v4-flash-free
+model: openrouter/deepseek/deepseek-v3.2
+fallback_models: [openrouter/qwen/qwen3-coder, openrouter/deepseek/deepseek-chat-v3-0324:free]
 description: A cada 3-4 specs entregues, faz retrospectiva: analisa o que travou, sugere anti-patterns novos pra `.opencode/skills/anti-patterns/`, append candidates em `docs/decisions.md` (como `[CANDIDATE]`, nunca como instituted). Nunca gradua candidate -> instituted (só humano grada).
 temperature: 0.3
 permission:
@@ -24,6 +25,7 @@ permission:
   webfetch: deny
   skill:
     anti-patterns: allow
+# rate_limit.rpm: 15  # advisory only — omo schema does not officially expose this; documents intent (75% margin under 20 rpm OpenRouter cap)
 ---
 
 # retrospector

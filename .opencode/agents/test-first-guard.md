@@ -1,6 +1,7 @@
 ---
 mode: subagent
-model: opencode/nemotron-3-super-free
+model: openrouter/anthropic/claude-haiku-4.5
+fallback_models: [openrouter/moonshotai/kimi-k2.6, openrouter/nvidia/nemotron-3-super:free]
 description: Guardião da regra HR-3 (test first). Antes de `hephaestus` editar `src/`, verifica que (a) existe pelo menos um teste novo em `tests/unit/` referenciando o spec atual, (b) `uv run pytest -q tests/unit/test_<slug>.py` está RED. Read-only; não escreve nem em `src/` nem em `tests/`. Veredito CONTINUE / BLOCKED-NO-TEST / BLOCKED-NOT-RED.
 temperature: 0.0
 permission:
@@ -20,6 +21,7 @@ permission:
     "*": deny
   task: deny
   webfetch: deny
+# rate_limit.rpm: 15  # advisory only — omo schema does not officially expose this; documents intent (75% margin under 20 rpm OpenRouter cap)
 ---
 
 # test-first-guard

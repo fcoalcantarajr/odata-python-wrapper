@@ -1,47 +1,12 @@
-// ~/.config/opencode/opencode.jsonc
-// Configuração GLOBAL do opencode. Não contém segredos.
 {
   "$schema": "https://opencode.ai/config.json",
 
-  // Telemetria OFF (training opt-in via opencode.ai/auth e accept_training_opt_in_via_zen).
-  "telemetry": {
-    "enabled": false
-  },
+  "telemetry": { "enabled": false },
 
-  // Providers ativos. opencode hospeda routing pros modelos free.
   "providers": {
-    "opencode": {
-      "enabled": true
-      // Modelos free aceitos via Zen auth + training opt-in (catálogo May 2026).
-      // Catálogo FREE definitivo (SÓ 3 modelos — opencode.ai/docs/zen privacy page):
-      //          opencode/big-pickle             (stealth; brain reasoning, quota BAIXA ±200 req/5h)
-      //          opencode/deepseek-v4-flash-free (coder; long ctx, quota ALTA ±31k req/5h)
-      //          opencode/nemotron-3-super-free  (NVIDIA trial; NÃO usar com dado sensível — NVIDIA loga)
-      // NOTA: MiniMax M2.5 Free, Qwen3 Coder 480B e MiMo V2 Pro Free saíram
-      // do free tier em May 2026. Todos os 7 agentes que usavam esses 3 foram
-      // remapeados pra deepseek-v4-flash-free (alta quota; default reasoning)
-      // ou big-pickle (reasoning crítico apenas — spec-author).
-    },
-    "openrouter": {
-      "enabled": true
-      // Só usado como fallback do hephaestus (deepseek-r1:free).
-      // API key vem de OPENROUTER_API_KEY no .env (não commitado).
-    }
+    "openrouter": { "enabled": true },
+    "opencode":   { "enabled": true }
   },
 
-  // Sessões: compact automático quando contexto ultrapassa 75%.
-  "sessions": {
-    "autoCompact": true,
-    "autoCompactThreshold": 0.75
-  },
-
-  // Permissions globais (default; sobrescrito por agent frontmatter).
-  "permission": {
-    "bash": {
-      "git push --force *": "deny",
-      "git commit --no-verify *": "deny",
-      "rm -rf /": "deny",
-      "sudo *": "deny"
-    }
-  }
+  "sessions": { "autoCompact": true, "autoCompactThreshold": 0.75 }
 }

@@ -1,6 +1,7 @@
 ---
 mode: subagent
-model: opencode/big-pickle
+model: openrouter/moonshotai/kimi-k2.6
+fallback_models: [openrouter/z-ai/glm-5, openrouter/qwen/qwen3.6-plus:free]
 description: Autor e validador de specs SDD. Escreve `specs/NNN-<slug>.md` com User Story + Use Cases + Gherkin AC absoluto + INVEST self-score. Valida specs existentes contra os critérios INVEST e a forma do Gherkin (Given/When/Then com valor observável — status code, igualdade numérica, exceção nomeada). Usar quando o usuário pedir `/spec` ou `/spec-check`, ou quando uma feature nova precisar de spec antes de código.
 temperature: 0.2
 permission:
@@ -20,6 +21,7 @@ permission:
   webfetch: deny
   skill:
     spec-driven-development: allow
+# rate_limit.rpm: 15  # advisory only — omo schema does not officially expose this; documents intent (75% margin under 20 rpm OpenRouter cap)
 ---
 
 # spec-author
