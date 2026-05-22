@@ -1,5 +1,6 @@
 ---
 mode: subagent
+model: opencode/big-pickle
 description: Autor e validador de specs SDD. Escreve `specs/NNN-<slug>.md` com User Story + Use Cases + Gherkin AC absoluto + INVEST self-score. Valida specs existentes contra os critérios INVEST e a forma do Gherkin (Given/When/Then com valor observável — status code, igualdade numérica, exceção nomeada). Usar quando o usuário pedir `/spec` ou `/spec-check`, ou quando uma feature nova precisar de spec antes de código.
 temperature: 0.2
 permission:

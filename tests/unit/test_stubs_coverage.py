@@ -40,10 +40,13 @@ async def test_fetch_metadata_stub() -> None:
 
 @pytest.mark.asyncio
 async def test_iter_pages_stub() -> None:
-    """iter_pages currently raises NotImplementedError (SPEC-004)."""
-    gen = pagination.iter_pages(None, "")  # type: ignore[arg-type]  # reason: stub
-    with pytest.raises(NotImplementedError):
-        await gen.__anext__()
+    """iter_pages is implemented (SPEC-004) — is an async generator."""
+    gen = pagination.iter_pages(None, "")  # type: ignore[arg-type]  # reason: client not needed for type check
+    assert hasattr(gen, "__anext__")
+    # Calling with None client will fail at runtime, but the function itself
+    # is now a real async generator (not a stub raising NotImplementedError).
+    # Real usage goes through client.paginate() which validates top and
+    # provides a properly initialized client.
 
 
 @pytest.mark.asyncio

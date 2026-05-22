@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import AsyncIterator
 from types import TracebackType
 from typing import Any, Self, cast
 
@@ -11,6 +12,7 @@ from yarl import URL
 
 from ado_odata_async._http import build_url
 from ado_odata_async.auth import mask_pat
+from ado_odata_async.pagination import iter_pages
 
 logger = logging.getLogger(__name__)
 
@@ -71,3 +73,27 @@ class AdoODataClient:
         async with self._session.get(url) as resp:
             resp.raise_for_status()
             return cast(dict[str, Any], await resp.json())
+
+    def paginate(
+        self,
+        entity_set: str,
+        *,
+        top: int = 100,
+        query: dict[str, str] | None = None,
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Paginate over entity_set, yielding each page dict.
+
+        Args:
+            entity_set: OData entity set name (e.g. ``"WorkItems"``).
+            top: Page size (``$top``). Must be >= 1.
+            query: Optional additional query parameters.
+
+        Returns:
+            AsyncIterator yielding page response dicts.
+
+        Raises:
+            ValueError: If *top* < 1.
+        """
+        if top < 1:
+            raise ValueError("top must be >= 1")
+        return iter_pages(self, entity_set, top=top, query=query)

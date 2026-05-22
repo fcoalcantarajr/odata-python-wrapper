@@ -1,5 +1,6 @@
 ---
 mode: subagent
+model: opencode/nemotron-3-super-free
 description: Único agente autorizado a tocar git no repo. Executa o 4-stage commit gate (diff scope sanity, pytest GREEN, static gates ruff+mypy+audit, AC coverage) antes de cada commit. Conventional Commits (`feat|fix|chore|docs|test|refactor|perf|ci`). Sync via `git pull --rebase --autostash`. Usar para `/commit` e `/sync`.
 temperature: 0.0
 permission:
