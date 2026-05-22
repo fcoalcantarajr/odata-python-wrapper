@@ -1,16 +1,15 @@
 {
-  "$schema": "https://opencode.ai/schema/mcp.v1.json",
   "mcpServers": {
     "notion": {
-      "command": "npx",
-      "args": ["-y", "@notionhq/notion-mcp-server@latest"],
-      "env": {
-        "NOTION_TOKEN": "${NOTION_TOKEN}",
-        "NOTION_ROOT_PAGE_ID": "${NOTION_ROOT_PAGE_ID}"
-      },
-      "transport": "stdio",
-      "timeout": 30000,
-      "description": "Notion MCP server. Used by notion-curator only (HR-22). Other agents must emit [NOTION_REQUEST] and let the primary delegate."
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "opencode-mcp-notion",
+        "--token",
+        "$NOTION_TOKEN",
+        "--workspace",
+        "$NOTION_WORKSPACE"
+      ]
     }
   }
 }

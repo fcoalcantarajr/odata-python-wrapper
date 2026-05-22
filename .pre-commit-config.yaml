@@ -6,15 +6,25 @@ repos:
         args: ["--fix"]
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.2
+  - repo: local
     hooks:
       - id: mypy
-        additional_dependencies:
-          - pydantic>=2.8
-          - types-python-dateutil>=2.9
-        args: ["--strict"]
+        name: mypy (uv run, --strict)
+        entry: uv run mypy --strict
+        language: system
+        types: [python]
         files: ^src/
+        require_serial: true
+        # Roda mypy via `uv run` reusando o venv populado por `uv sync --all-extras`.
+        # Toda dep do pyproject.toml (aiohttp, yarl, tenacity, pydantic, ...)
+        # fica visível sem duplicar em additional_dependencies.
+        #
+        # Anti-pattern (Step 1 hardening, May 2026): mirrors-mypy com
+        # additional_dependencies vira whack-a-mole — cada dep nova gera
+        # import-not-found até alguém atualizar a lista. Observado quando
+        # aiohttp/yarl não estavam em additional_dependencies → mypy --strict
+        # disparou 10 erros (import-not-found + no-any-unimported em cascata)
+        # mesmo com o venv local resolvendo tudo corretamente.
 
   - repo: local
     hooks:
@@ -23,4 +33,3 @@ repos:
         entry: bash scripts/audit.sh
         language: system
         pass_filenames: false
-        always_run: true

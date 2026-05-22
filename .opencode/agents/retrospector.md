@@ -39,19 +39,3 @@ permission:
    - Tempo gasto (heurística: # de revisões do commit, comments inline).
    - Padrões repetidos (ex: "3 specs tiveram que re-rodar `/test-first` por imports faltando").
 3. Append em `docs/decisions.md`:
-```
-## \[CANDIDATE\] ADR-XXX — \<título\>
-Date: YYYY-MM-DD
-Status: CANDIDATE (proposed by retrospector)
-Context: ...
-Decision (proposed): ...
-Consequences (estimated): ...
-```
-4. Se padrão anti-pattern emergir, append entry em `.opencode/skills/anti-patterns/SKILL.md` como `AP-NNN`.
-
-## Hard limits
-
-- **NUNCA** gradua `[CANDIDATE]` para `[INSTITUTED]`. Só humano grada.
-- NÃO edita `src/`, `tests/`, `specs/`, `AGENTS.md`, `.opencode/agents/`, `.opencode/commands/`.
-- NÃO chama git (só read-only).
-- NÃO chama outros agentes (HR-17).

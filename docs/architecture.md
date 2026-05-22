@@ -19,14 +19,14 @@
 
 ```
 user code
-	-> AdoODataClient.\<method\>
+	-> AdoODataClient.<method>
 		-> query/_serialize (canonical order, HR-9)
 			-> _http.build_url (HR-19 v4.0-preview)
 				-> retry wrapper (HR-15)
 					-> session.get / post
 						-> _http.parse_response (HR-15 203 detection)
-							-> entities.\<Entity\>(row)  (Pydantic frozen+strict, HR-4)
-	\<- async iterator / list
+							-> entities.<Entity>(row)  (Pydantic frozen+strict, HR-4)
+	<- async iterator / list
 ```
 
 ## Decisões chave

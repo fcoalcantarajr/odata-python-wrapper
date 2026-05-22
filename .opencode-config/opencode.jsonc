@@ -12,10 +12,15 @@
   "providers": {
     "opencode": {
       "enabled": true
-      // Modelos free aceitos via Zen auth + training opt-in.
-      // Catalogo: opencode/big-pickle, opencode/deepseek-v4-flash-free,
-      //          opencode/minimax-m2.5-free, opencode/mimo-v2-pro-free,
-      //          opencode/nemotron-3-super-free
+      // Modelos free aceitos via Zen auth + training opt-in (catálogo May 2026).
+      // Catálogo FREE definitivo (SÓ 3 modelos — opencode.ai/docs/zen privacy page):
+      //          opencode/big-pickle             (stealth; brain reasoning, quota BAIXA ±200 req/5h)
+      //          opencode/deepseek-v4-flash-free (coder; long ctx, quota ALTA ±31k req/5h)
+      //          opencode/nemotron-3-super-free  (NVIDIA trial; NÃO usar com dado sensível — NVIDIA loga)
+      // NOTA: MiniMax M2.5 Free, Qwen3 Coder 480B e MiMo V2 Pro Free saíram
+      // do free tier em May 2026. Todos os 7 agentes que usavam esses 3 foram
+      // remapeados pra deepseek-v4-flash-free (alta quota; default reasoning)
+      // ou big-pickle (reasoning crítico apenas — spec-author).
     },
     "openrouter": {
       "enabled": true

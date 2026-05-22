@@ -1,86 +1,116 @@
 <!-- notion-page-id: -->
 <!-- last-sync-hash: -->
 
-# Handoff — primeira iteração end-to-end
+# 🚌 Handoff — ado-odata-async
 
-Você (o agente primário do opencode + omo) recebeu este repo com tudo pronto:
+> Se o desenvolvedor original for atropelado por um ônibus, ler este arquivo antes de qualquer ação.
 
-- `AGENTS.md` na raiz: HARD RULES HR-1..HR-22 e FORBIDDEN tokens.
-- `.opencode/agents/`: 6 subagentes (spec-author, test-first-guard, odata-reviewer, git-keeper, retrospector, notion-curator).
-- `.opencode/commands/`: 9 commands (`/spec`, `/spec-check`, `/test-first`, `/implement`, `/review`, `/commit`, `/sync`, `/retro`, `/notion-sync`).
-- `.opencode/skills/`: 7 skills carregadas on-demand.
-- `.opencode-config/`: routing dos modelos free (já copiado pra `~/.config/` pelo postCreate).
-- `pyproject.toml`, `src/ado_odata_async/` com stubs `NotImplementedError`, `tests/conftest.py` com fixtures, `docs/architecture.md`, `docs/decisions.md` com ADR-001 + ADR-006.
-- `specs/000-TEMPLATE.md`, `specs/001-http-skeleton.md` (já escrita, 7 AC), `specs/BACKLOG.md`.
+---
 
-## Sua missão agora
+## Single source of truth
 
-Fazer SPEC-001 sair de DRAFT pra IMPLEMENTED, ponta-a-ponta, sem perguntar nada que esteja resolvido aqui.
+1. **`AGENTS.md`** ([AGENTS.md](AGENTS.md)) — regras, stack, gotchas, DoD. Sempre a primeira leitura.
+2. **`pyproject.toml`** — versão do package (lida via `importlib.metadata.version`). Nenhum outro lugar duplica.
+3. **`specs/`** — backlog e specs aprovadas. Nenhuma implementação sem spec aprovada.
+4. **`docs/decisions.md`** — ADRs registrados. Vale mais que conversa de Slack.
+5. **`.opencode/`** — comandos, agentes, skills. Cada comando invoca exatamente um subagent.
 
-## Sequence obrigatória
+---
 
-1. `/spec-check specs/001-http-skeleton.md`
-   - Esperado: `APPROVED`.
-   - Se vier `ADJUSTMENTS` ou `REQ_BLOCKED`, pare e me pergunte (humano).
+## Fluxo diário (loop)
 
-2. `/test-first specs/001-http-skeleton.md`
-   - `atlas` escreve `tests/unit/test_http_skeleton.py` com 7 testes RED.
-   - Em seguida, você (primary) chama `test-first-guard` com o caminho do spec.
-   - Esperado: `CONTINUE`.
-   - Se vier `BLOCKED-*`, **não** prossiga pra impl. Reescreva os testes (volta pro `atlas`).
+```
+1. /spec-check <spec> → APPROVED?
+2. /test-first <spec> → RED (atlas escreve testes)
+3. /implement <spec> → GREEN (hephaestus implementa)
+4. /review <spec> → APPROVED (oracle + odata-reviewer)
+5. /commit → git-keeper 4-stage gate
+6. /notion-sync → notion-curator push
+```
 
-3. `/implement specs/001-http-skeleton.md`
-   - `hephaestus` edita `src/ado_odata_async/client.py` e `src/ado_odata_async/auth.py`.
-   - Esperado: 7 testes GREEN, `ruff`, `mypy --strict`, `bash scripts/audit.sh` todos exit 0.
+Cada ciclo leva ~30-60 min. Faça 3-4 ciclos por dia.
 
-4. `/review`
-   - Fase 1: `oracle` (async correctness).
-   - Fase 2: você (primary) delega pro `odata-reviewer` pra checar HR-7..HR-22 + 8 gotchas.
-   - Esperado: ambos `APPROVED`. Se `CHANGES_REQUESTED`, volta pro `hephaestus`.
+---
 
-5. `/commit SPEC-001`
-   - `git-keeper` roda o 4-stage gate.
-   - Esperado: commit `feat(http): single ClientSession + v4.0-preview + empty-user BasicAuth (SPEC-001)`.
-   - Em sucesso, `git-keeper` imprime `[NOTION_PUSH_REQUEST] specs/001-http-skeleton.md, docs/decisions.md, AGENTS.md`.
+## 8 gotchas que vão te pegar
 
-6. `/notion-sync push specs/001-http-skeleton.md docs/decisions.md AGENTS.md`
-   - `notion-curator` espelha as 3 pages no workspace Notion.
-   - Esperado: 3 pushed, 0 conflicts.
+Verbatim de `AGENTS.md`:
 
-## Regras que você NÃO pode quebrar
+| # | Gotcha | Solução |
+|---|--------|---------|
+| 1 | PAT auth username vazio | `BasicAuth("", pat)` — qualquer valor retorna 401 |
+| 2 | Query option order | `$apply → $filter → $orderby → $expand → $select → $skip → $top` |
+| 3 | URL > 3000 chars | Switch pra `POST $batch` multipart/mixed |
+| 4 | WorkItemSnapshot sem $apply groupby | Requer `groupby(DateSK)` |
+| 5 | $expand=Revisions bloqueado | Use entity set `WorkItemRevisions` |
+| 6 | Escape aspa simples | Dobre: `O'Keefe → O''Keefe` |
+| 7 | Datetime literal sem prefixo | ISO 8601 com Z ou offset, sem `datetime'...'` |
+| 8 | HTTP 203 + text/html | PAT inválido → `AuthenticationError`, não retry |
 
-- HR-1..HR-22 (vide `AGENTS.md`). Se humano contradisser, abre `[ESCALATION]`.
-- HR-17: você (primary) é o **único** que invoca subagentes. Subagentes não se chamam entre si.
-- HR-18: só `git-keeper` toca git. Você ou outros agentes → `[GIT_REQUEST]`.
-- HR-22: só `notion-curator` escreve via MCP `notion`. Você ou outros → `[NOTION_REQUEST]`.
-- NUNCA edite `src/` antes de teste RED existir e `test-first-guard` retornar `CONTINUE`.
-- NUNCA commite sem 4-stage gate verde.
-- NUNCA faça `git push --force` ou `git commit --no-verify`.
+---
 
-## Quando parar e perguntar
+## Árvore do repositório
 
-- `/spec-check` retornou `REQ_BLOCKED`.
-- `test-first-guard` retornou `BLOCKED-*` 2x seguidas mesmo com revisão do `atlas`.
-- `odata-reviewer` retornou `CHANGES_REQUESTED` 2x seguidas mesmo com fix do `hephaestus`.
-- `git-keeper` aborta o gate por razão que você não consegue resolver sozinho.
-- `notion-curator` reporta `[NOTION_CONFLICT]`.
-- Qualquer modelo free retornou erro irrecuperável (rate limit total, modelo deprecated).
+```
+.
+├── AGENTS.md                     ← Leia primeiro
+├── pyproject.toml                ← Versão, dependências (uv sync, pip forbidden)
+├── .opencode/
+│   ├── agents/                   ← 6 subagents (spec-author, test-first-guard, odata-reviewer, git-keeper, retrospector, notion-curator)
+│   ├── commands/                 ← 9 comandos (/spec, /spec-check, /test-first, /implement, /review, /commit, /sync, /retro, /notion-sync)
+│   └── skills/                   ← 7 skills (spec-driven-development, tdd-loop, ado-odata-gotchas, anti-patterns, asyncio-patterns, git-discipline, notion-sync)
+├── src/ado_odata_async/          ← Código Python (12+ módulos)
+│   ├── __init__.py, auth.py, client.py, exceptions.py, retry.py, pagination.py, metadata.py
+│   ├── query/ (DSLs: filter, apply, serialize)
+│   └── entities/ (WorkItem, WorkItemRevisions, etc.)
+├── specs/
+│   ├── 000-TEMPLATE.md           ← Template canônico
+│   ├── 001-http-skeleton.md      ← Primeira spec real
+│   └── BACKLOG.md                ← Próximas 12 specs
+├── tests/                        ← unit (pytest-asyncio + aioresponses)
+├── docs/
+│   ├── architecture.md           ← Visão geral do sistema
+│   ├── decisions.md              ← ADRs
+│   └── HANDOFF.md                ← Este arquivo
+├── scripts/
+│   └── audit.sh                  ← Verificador de FORBIDDEN tokens (HR)
+└── .devcontainer/
+    └── postCreate.sh             ← Bootstrap do devcontainer
+```
 
-## Quando seguir sem perguntar
+---
 
-- Tudo que cabe em HR-* e em uma das 7 skills.
-- Specs DRAFT no `BACKLOG.md` que você já sabe destrancar (depois de SPEC-001 IMPLEMENTED, comece SPEC-002 automaticamente — a menos que humano interrompa).
+## Comandos opencode
 
-## Pronável sequence depois de SPEC-001 GREEN
+| Comando | O que faz | Subagent invocado |
+|---------|-----------|-------------------|
+| `/spec <slug>` | Gera spec a partir do template | spec-author |
+| `/spec-check <slug>` | Valida spec contra critérios INVEST | spec-author |
+| `/test-first <slug>` | Escreve testes RED (NUNCA toca src/) | atlas → test-first-guard |
+| `/implement <slug>` | Implementa código mínimo pra GREEN | hephaestus |
+| `/review <slug>` | Review de spec + implementação | oracle + odata-reviewer |
+| `/commit` | 4-stage gate: lint → type → test → audit | git-keeper |
+| `/sync` | uv sync + pre-commit | — (shell) |
+| `/retro` | Retrospectiva a cada 3-4 specs | retrospector |
+| `/notion-sync` | Push specs + decisions + AGENTS pra Notion | notion-curator |
 
-`SPEC-002 → SPEC-007 → SPEC-003 → SPEC-005 → SPEC-006 → SPEC-008 → SPEC-004 → SPEC-009 → SPEC-010 → SPEC-011 → SPEC-012`
+---
 
-A cada 3 specs IMPLEMENTED, rode `/retro HEAD~<n>..HEAD` antes de começar a próxima.
+## Primeiras ações do sucessor
 
-## Tom de relatório
+1. `uv sync` (instala dependências)
+2. `uv run pytest -q` (deve passar — se não, correção emergencial)
+3. `uv run ruff check .` (lint limpo)
+4. `uv run mypy src/ --strict` (tipagem limpa)
+5. `bash scripts/audit.sh` (exit 0)
+6. Pegar a spec mais prioritária de `specs/BACKLOG.md` que esteja `DRAFT`
+7. Iniciar ciclo: `/spec-check 001` → `/test-first 001` → `/implement 001` → `/review 001` → `/commit`
 
-- Imprima sumarios curtos no fim de cada etapa: arquivos editados, testes GREEN, gate result.
-- Não repita o que o humano já sabe.
-- Se algo não ficou claro na spec, **não invente**: abra `[ESCALATION]`.
+---
 
-## Bom trabalho. Vai.
+## Emergency contact
+
+- **Repo owner**: @fcoalcantarajr
+- **ADR disputes**: Abrir issue no repo marcando `[ADR]`. Não alterar `docs/decisions.md` sem issue.
+- **Notion MCP outage**: Verificar status em https://status.notion.so. Se offline > 1h, pular `/notion-sync` e continuar.
+- **Azure DevOps API breaking change**: Pausar. Criar spec de migração. ADR novo obrigatório.

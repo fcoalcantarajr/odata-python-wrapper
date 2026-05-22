@@ -42,27 +42,11 @@ Read-only. Review pre-commit específico do domínio.
 2. `uv run ruff check .` clean.
 3. `uv run mypy src/` strict clean.
 4. `grep -rn 'ClientSession(' src/` — deve aparecer **uma só vez** (no `client.py`, dentro de `__aenter__`). Mais que uma → viola HR-7.
-5. `grep -rn 'BasicAuth(' src/` — todas devem ser `BasicAuth(\"\", pat)`. Qualquer username não-vazio viola HR-8.
-6. `grep -rn 'datetime'\''` src/` — deve ser vazio (HR-11).
-7. `grep -rn '\$expand=Revisions' src/` — deve ser vazio (HR-14).
+5. `grep -rn 'BasicAuth(' src/` — todas devem ser `BasicAuth("", pat)`. Qualquer username não-vazio viola HR-8.
+6. `grep -rn "datetime'" src/` — deve ser vazio (HR-11).
+7. `grep -rn '\\$expand=Revisions' src/` — deve ser vazio (HR-14).
 8. `grep -rn '_odata/v2.0' src/` — deve ser vazio (HR-19).
-9. `grep -rn 'WorkItemSnapshot\|WorkItemBoardSnapshot' src/` — todo uso precisa estar em função que aplica `$apply` com `groupby DateSK` (HR-13).
+9. `grep -rn 'WorkItemSnapshot\\|WorkItemBoardSnapshot' src/` — todo uso precisa estar em função que aplica `$apply` com `groupby DateSK` (HR-13).
 10. Inspeção visual do diff: PAT mascarado em todo log (HR-16).
 
 ## Output
-
-```
-APPROVED
-```
-ou
-```
-CHANGES_REQUESTED
-- HR-N violado em path:linha — \<descrição\>
-- HR-M violado em path:linha — \<descrição\>
-```
-
-## Hard limits
-
-- NÃO edita código nem teste.
-- NÃO chama git (só `git diff`/`git log` read-only).
-- NÃO chama outros agentes (HR-17).

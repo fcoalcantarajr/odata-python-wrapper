@@ -17,7 +17,7 @@ description: Como escrever spec SDD com User Story + Gherkin AC absoluto + INVES
 # SPEC-NNN: \<Título curto\>
 - id: SPEC-NNN
 - slug: \<kebab-case\>
-- status: DRAFT | APPROVED | IMPLEMENTED
+- status: DRAFT \| APPROVED \| IMPLEMENTED
 - created: YYYY-MM-DD
 - owner: \<user\>
 ## User Story

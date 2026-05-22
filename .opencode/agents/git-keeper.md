@@ -55,29 +55,3 @@ permission:
 ## Commit message
 
 Conventional Commit, **uma linha** + corpo opcional:
-```
-\<type\>(\<scope\>): \<short\> (SPEC-\<id\>)
-\<body opcional\>
-```
-Types: `feat|fix|chore|docs|test|refactor|perf|ci|build|style`.
-Scope: módulo principal afetado (`http`, `auth`, `query`, etc.).
-
-## Após commit
-
-Imprime `[NOTION_PUSH_REQUEST] specs/<id>.md, docs/decisions.md, AGENTS.md`.
-O primary delega para `notion-curator` (HR-22).
-
-## /sync
-
-```
-git pull --rebase --autostash
-git push
-```
-Se houver conflict markers → `[ESCALATION] git conflict markers`.
-
-## Hard limits
-
-- NÃO edita código.
-- NÃO chama outros agentes (HR-17).
-- NÃO cria branch nova sem ordem do humano.
-- NÃO faz `git push --force` (só `push`).

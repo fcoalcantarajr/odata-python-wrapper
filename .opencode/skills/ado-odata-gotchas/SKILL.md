@@ -34,11 +34,9 @@ Limite efetivo ~3000 chars. Acima, switch pra `POST /$batch` multipart/mixed.
 ```
 POST /myorg/myproject/_odata/v4.0-preview/\$batch
 Content-Type: multipart/mixed; boundary=batch_\<uuid\>
-
 --batch_\<uuid\>
 Content-Type: application/http
 Content-Transfer-Encoding: binary
-
 GET WorkItems?\$filter=... HTTP/1.1
 Accept: application/json
 --batch_\<uuid\>--
@@ -72,7 +70,7 @@ Quando PAT é inválido, ADO retorna `203 Non-Authoritative` com `Content-Type: 
 
 ```
 if resp.status == 203 and "text/html" in resp.headers.get("Content-Type", ""):
-	raise AuthenticationError("PAT invalid (203 + text/html)")
+    raise AuthenticationError("PAT invalid (203 + text/html)")
 ```
 
 ## Nota v4.0-preview vs v2.0

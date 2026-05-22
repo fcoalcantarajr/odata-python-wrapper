@@ -39,7 +39,7 @@ Nenhum passo é pulado. TEST_RED VEM ANTES DO IMPL_GREEN. SEMPRE.
 - **HR-5** Tipagem **estrita** sempre. `# type: ignore` é FORBIDDEN exceto com `# type: ignore[<code>]  # reason: <texto>`.
 - **HR-6** Async-only no client. NUNCA `requests`, NUNCA `urllib`. Tudo via `aiohttp`.
 - **HR-7** **Single `ClientSession` por client.** Criada em `__aenter__`, fechada em `__aexit__`. Re-entry forbidden.
-- **HR-8** Auth via `aiohttp.BasicAuth(\"\", pat)` — **username vazio**. Qualquer valor retorna 401 (gotcha 1).
+- **HR-8** Auth via `aiohttp.BasicAuth("", pat)` — **username vazio**. Qualquer valor retorna 401 (gotcha 1).
 - **HR-9** Query option order via `query/_serialize.py` only. Ordem: `$apply → $filter → $orderby → $expand → $select → $skip → $top`.
 - **HR-10** URLs `> 3000 chars` → switch automático pra `POST $batch` multipart/mixed. Limite checado no serializer.
 - **HR-11** Datetime literals em filtros: ISO 8601 com `Z` ou offset, SEM prefixo `datetime'...'` (gotcha 7).
@@ -50,7 +50,7 @@ Nenhum passo é pulado. TEST_RED VEM ANTES DO IMPL_GREEN. SEMPRE.
 - **HR-16** PAT mascarado em logs: nunca printar mais que 6 primeiros chars + `...`.
 - **HR-17** **Subagents não invocam subagents.** opencode hardcoda `task: false` em sessão subagent (Issue #7296). Hierarquia flat: PRIMARY → SUBAGENT.
 - **HR-18** **Apenas `git-keeper` toca git.** Outros agentes imprimem `[GIT_REQUEST] <msg>` e param. Audit: `grep -rnE '\\bgit (commit|push|pull|merge|rebase|add|reset|checkout|tag)\\b' .opencode/agents/ | grep -v git-keeper.md` deve ser vazio.
-- **HR-19** OData version isolada em `client.py` como `ODATA_VERSION = \"v4.0-preview\"`. Mudança de versão requer ADR novo.
+- **HR-19** OData version isolada em `client.py` como `ODATA_VERSION = "v4.0-preview"`. Mudança de versão requer ADR novo.
 - **HR-20** `pyproject.toml` é a única fonte de verdade da versão do package; código lê via `importlib.metadata.version(__package__)`.
 - **HR-21** Coverage mínimo: `--cov-fail-under=85`. CI quebra abaixo disso.
 - **HR-22** **Apenas `notion-curator` invoca MCP `notion`.** Outros imprimem `[NOTION_REQUEST] <msg>` e param. Audit: `grep -rni 'mcp.*notion' .opencode/agents/ | grep -v notion-curator.md` deve ser vazio.
@@ -107,7 +107,7 @@ Nenhum passo é pulado. TEST_RED VEM ANTES DO IMPL_GREEN. SEMPRE.
 
 Valem pra v2.0 e v4.0-preview — são restrições do serviço, não da versão.
 
-1. **PAT auth**: username MUST be empty (`\"\"`). Qualquer valor retorna 401.
+1. **PAT auth**: username MUST be empty (`""`). Qualquer valor retorna 401.
 2. **Query option order**: `$apply → $filter → $orderby → $expand → $select → $skip → $top`. Ordem errada = 400.
 3. **URL > 3000 chars** → switch pra `POST $batch` multipart/mixed.
 4. **`WorkItemSnapshot` / `WorkItemBoardSnapshot`** REQUEREM `$apply` com `groupby` em `DateSK`/`DateValue`.
@@ -122,7 +122,7 @@ Valem pra v2.0 e v4.0-preview — são restrições do serviço, não da versão
 
 - Logger por módulo: `logger = logging.getLogger(__name__)`.
 - Nunca `print()` em `src/` (use logger).
-- PAT mascarado: `pat[:6] + \"...\"` (HR-16).
+- PAT mascarado: `pat[:6] + "..."` (HR-16).
 - Nível default: `INFO`. `DEBUG` libera request/response (com PAT mascarado).
 - Em testes: `caplog.set_level(logging.DEBUG)` quando precisar inspecionar.
 

@@ -9,28 +9,28 @@ description: Padrões seguros pra ClientSession lifecycle, TCPConnector, tenacit
 
 ```
 class AdoODataClient:
-	def __init__(self, org: str, project: str, pat: str) -> None:
-		self._org = org
-		self._project = project
-		self._pat = pat
-		self._session: aiohttp.ClientSession | None = None
+    def __init__(self, org: str, project: str, pat: str) -> None:
+        self._org = org
+        self._project = project
+        self._pat = pat
+        self._session: aiohttp.ClientSession | None = None
 
-	async def __aenter__(self) -> "AdoODataClient":
-		if self._session is not None:
-			raise RuntimeError("client already entered")
-		connector = aiohttp.TCPConnector(limit=20, limit_per_host=10)
-		self._session = aiohttp.ClientSession(
-			auth=aiohttp.BasicAuth("", self._pat),  # HR-8
-			connector=connector,
-			raise_for_status=False,
-			timeout=aiohttp.ClientTimeout(total=60),
-		)
-		return self
+    async def __aenter__(self) -> "AdoODataClient":
+        if self._session is not None:
+            raise RuntimeError("client already entered")
+        connector = aiohttp.TCPConnector(limit=20, limit_per_host=10)
+        self._session = aiohttp.ClientSession(
+            auth=aiohttp.BasicAuth("", self._pat),  # HR-8
+            connector=connector,
+            raise_for_status=False,
+            timeout=aiohttp.ClientTimeout(total=60),
+        )
+        return self
 
-	async def __aexit__(self, *exc) -> None:
-		assert self._session is not None
-		await self._session.close()
-		self._session = None
+    async def __aexit__(self, *exc) -> None:
+        assert self._session is not None
+        await self._session.close()
+        self._session = None
 ```
 
 ## Retry com tenacity (só em retriáveis)
@@ -40,10 +40,10 @@ from tenacity import retry, stop_after_attempt, wait_exponential_jitter, retry_i
 from ado_odata_async.exceptions import TransientError
 
 @retry(
-	stop=stop_after_attempt(4),
-	wait=wait_exponential_jitter(initial=0.5, max=8),
-	retry=retry_if_exception_type(TransientError),
-	reraise=True,
+    stop=stop_after_attempt(4),
+    wait=wait_exponential_jitter(initial=0.5, max=8),
+    retry=retry_if_exception_type(TransientError),
+    reraise=True,
 )
 async def _do_request(...): ...
 ```
@@ -55,16 +55,16 @@ async def _do_request(...): ...
 Quando URL > 3000 chars (HR-10):
 ```
 body = (
-	f"--\{boundary\}rn"
-	f"Content-Type: application/httprn"
-	f"Content-Transfer-Encoding: binaryrnrn"
-	f"GET \{path\}?\{qs\} HTTP/1.1rn"
-	f"Accept: application/jsonrnrn"
-	f"--\{boundary\}--rn"
+    f"--\{boundary\}\r\n"
+    f"Content-Type: application/http\r\n"
+    f"Content-Transfer-Encoding: binary\r\n\r\n"
+    f"GET \{path\}?\{qs\} HTTP/1.1\r\n"
+    f"Accept: application/json\r\n\r\n"
+    f"--\{boundary\}--\r\n"
 )
 headers = {"Content-Type": f"multipart/mixed; boundary=\{boundary\}"}
 async with session.post(batch_url, data=body, headers=headers) as r:
-	...
+    ...
 ```
 
 ## Cancel propagation

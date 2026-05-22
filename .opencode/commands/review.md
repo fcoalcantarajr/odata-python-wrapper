@@ -23,4 +23,3 @@ ou
 CHANGES_REQUESTED
 - \<path:linha\> — \<descrição\>
 ```
-

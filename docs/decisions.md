@@ -21,20 +21,18 @@ Formato: `[INSTITUTED]` (humano confirmou) ou `[CANDIDATE]` (proposed by retrosp
 - Context: Entities OData são lidas-de-API; queremos imutabilidade pra evitar mutação acidental e detecção early de schema drift (campo novo do servidor).
 - Decision: `ODataEntity` base com `frozen=True, strict=True, extra="forbid"`. Todas entidades herdam.
 - Consequences: schema drift quebra teste imediatamente (extra forbid). Frozen impede dataclass-style mutation; uso explicito de `model_copy(update=...)` quando precisar variante.
+## ADR-009: Notion MCP como store canônico de specs + ADRs
 
-## [INSTITUTED] ADR-008 — Notion MCP sync via notion-curator only
+- **Date:** 2026-05-19
+- **Status:** Accepted
+- **Context:** Precisamos de um store central que o Agente Omo leia e escreva, sem depender de git. Notion foi escolhido porque o Omo tem MCP nativo e todos os ADRs + specs precisam ser acessíveis a stakeholders não-técnicos.
+- **Decision:** Usar `opencode-mcp-notion` com token OAuth e workspace ID. `notion-curator` é o único agente autorizado a escrever no Notion (HR-22). Demais agentes imprimem `[NOTION_REQUEST]` e param.
+- **Consequences:** Positivo: stakeholders não-técnicos veem specs; Notion search funciona cross-workspace. Negativo: sync bidirecional requer disciplina; se token expirar, Omo escala.
 
-- Date: 2026-05-19
-- Status: INSTITUTED
-- Context: Queremos manter `specs/`, `docs/`, `AGENTS.md` espelhados em pages Notion pra colaborar com humanos que não vivem no repo. Notion expõe um MCP server oficial (`@notionhq/notion-mcp-server`) que dá acesso CRUD a pages. Sem disciplina, qualquer agente passa a escrever no Notion e a divergir.
-- Decision: Único agente autorizado a invocar MCP `notion` write é o `notion-curator`. Outros agentes que queiram push/pull imprimem `[NOTION_REQUEST] <msg>` e o primary delega.
-- Implementation:
-  - `.opencode/mcp.json` declara o server com `transport: stdio` e env via `${NOTION_TOKEN}`, `${NOTION_ROOT_PAGE_ID}`.
-  - Permission MCP em `.opencode/agents/notion-curator.md` contém `mcp: { notion: allow }`. Nenhum outro agent tem essa chave (HR-22).
-  - Audit grep em `scripts/audit.sh` valida que nenhum outro agente referencia `mcp:` com `notion`.
-  - Conflict resolution: hash sha256 do conteúdo (sem headers) compara contra `last-sync-hash` no header HTML do md. Disk wins por default; conflict explicito exige flag humana.
-- Consequences:
-  - Notion vira segunda fonte visível (read-only para humano "não-dev").
-  - Risco: se humano editar a page no Notion UI sem rodar `/notion-sync pull`, próximo `push` aborta com `[NOTION_CONFLICT]`. Workflow esperado: edit -> pull -> commit -> push.
-  - Rate limit Notion MCP ~3 RPS; cliente self-throttle 5 RPS máximo.
-- Rollback: desabilitar removendo permission MCP do `notion-curator` e bloco `mcpServers.notion` do `.opencode/mcp.json`. Specs/docs continuam no disco normalmente; Notion vira read-only manual.
+## ADR-010: Scaffolding da entrega via opencode (Steps 1-10)
+
+- **Date:** 2026-05-19
+- **Status:** Accepted
+- **Context:** O repository estava vazio. Precisávamos de todos os arquivos de infra (pyproject, ruff, mypy, pre-commit, scripts, configs, CI) e de engenharia (specs, docs, ADRs, handoff) antes de escrever qualquer código de domínio. Fazer manualmente levaria dias.
+- **Decision:** Usar opencode plus Notion MCP como bootstrap engine. Cada "Step" do Notion vira um comando / arquivo no repositório. O supervisor (`opencode`) lê a página raiz no Notion, itera sobre as 10 subpáginas (Steps), e para cada uma extrai o conteúdo e materializa em disco.
+- **Consequences:** Positivo: repositório materializado em < 20 min; rastreabilidade via conventional commit; ADR-009 registrado. Negativo: dependência de Notion MCP disponível; se Notion ficar offline, bootstrap não roda.

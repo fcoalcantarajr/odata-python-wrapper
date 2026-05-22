@@ -47,23 +47,3 @@ permission:
 - `AGENTS.md` -> page "AGENTS.md (live)".
 
 Identificação por header HTML invisível no topo do arquivo markdown:
-```
-\<!-- notion-page-id: 0123abcd-... --\>
-\<!-- last-sync-hash: sha256:... --\>
-```
-
-## Conflict resolution
-
-1. Compara `last-sync-hash` com hash atual do disco.
-2. Compara hash da page Notion (via MCP fetch) com `last-sync-hash`.
-3. Se ambos divergiram → **abort** com `[NOTION_CONFLICT] <path> diverged (disk X, notion Y)`. Default disk wins **apenas** se humano confirmar via `--prefer=disk`.
-4. Se só disco mudou → push.
-5. Se só Notion mudou → pull.
-6. Se nenhum mudou → noop.
-
-## Hard limits
-
-- NÃO chama git (HR-18 — delega imprimindo `[GIT_REQUEST]`).
-- NÃO edita `src/`, `tests/`, `pyproject.toml`, `.opencode/**`.
-- NÃO chama outros agentes (HR-17).
-- Rate limit: max 5 RPS pro Notion MCP (sleep 200ms entre calls).

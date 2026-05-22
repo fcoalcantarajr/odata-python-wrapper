@@ -42,13 +42,3 @@ Read-only. Verifica HR-3 antes de qualquer impl.
 ## Output
 
 Uma das três strings exatas:
-```
-CONTINUE
-BLOCKED-NO-TEST \<razão\>
-BLOCKED-NOT-RED \<razão\>
-```
-
-## Hard limits
-
-- NÃO escreve em lugar nenhum.
-- NÃO chama outros agentes (HR-17).
