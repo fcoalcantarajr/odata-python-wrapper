@@ -48,9 +48,14 @@ async def test_iter_pages_stub() -> None:
 
 @pytest.mark.asyncio
 async def test_with_retry_stub() -> None:
-    """with_retry currently raises NotImplementedError (SPEC-003)."""
-    with pytest.raises(NotImplementedError):
-        await retry.with_retry(lambda: None)()  # type: ignore[arg-type]  # reason: stub ignores sig
+    """with_retry is implemented (SPEC-003)."""
+
+    async def ok() -> str:
+        return "done"
+
+    wrapped = retry.with_retry(ok)
+    result = await wrapped()
+    assert result == "done"
 
 
 def test_entities_module_importable() -> None:
