@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
+import logging
 from types import TracebackType
-from typing import Self
+from typing import Any, Self, cast
 
 import aiohttp
+from yarl import URL
+
+from ado_odata_async._http import build_url
+from ado_odata_async.auth import mask_pat
+
+logger = logging.getLogger(__name__)
 
 # Single source of truth for the OData version (HR-19, HR-20).
 # Rollback to "v2.0" requires ADR amendment + test fixture update.
@@ -24,9 +31,16 @@ class AdoODataClient:
         self._project = project
         self._pat = pat
         self._session: aiohttp.ClientSession | None = None
+        self._entered: bool = False
 
     async def __aenter__(self) -> Self:
-        raise NotImplementedError("SPEC-001 will implement session lifecycle")
+        if self._entered:
+            raise RuntimeError("already entered")
+        self._entered = True
+        auth = aiohttp.BasicAuth("", self._pat)
+        self._session = aiohttp.ClientSession(auth=auth)
+        logger.debug("client entered — pat=%s odata=%s", mask_pat(self._pat), ODATA_VERSION)
+        return self
 
     async def __aexit__(
         self,
@@ -34,4 +48,26 @@ class AdoODataClient:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        raise NotImplementedError("SPEC-001 will implement session lifecycle")
+        assert self._session is not None
+        await self._session.close()
+        self._session = None
+        self._entered = False
+        logger.debug("client exited — pat=%s odata=%s", mask_pat(self._pat), ODATA_VERSION)
+
+    def __repr__(self) -> str:
+        return (
+            f"{type(self).__name__}"
+            f"(org={self._org!r}, project={self._project!r}, "
+            f"pat={mask_pat(self._pat)!r}, odata={ODATA_VERSION!r})"
+        )
+
+    async def get(self, entity_set: str, **params: str) -> dict[str, Any]:
+        assert self._session is not None
+        base = URL(
+            f"https://analytics.dev.azure.com/"
+            f"{self._org}/{self._project}/_odata/{ODATA_VERSION}"
+        )
+        url = build_url(base, entity_set, query=params or None)
+        async with self._session.get(url) as resp:
+            resp.raise_for_status()
+            return cast(dict[str, Any], await resp.json())

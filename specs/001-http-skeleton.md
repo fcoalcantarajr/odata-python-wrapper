@@ -80,7 +80,7 @@ Then é levantada `RuntimeError` com mensagem contendo "already entered"
 Given um AdoODataClient(pat="abcdef" * 10)
 When chamo `repr(client)` ou `str(client)`
 Then a saída **não** contém a substring do PAT inteiro
-	And contém apenas os 6 últimos chars do PAT prefixados por "..."
+	And contém apenas os 6 primeiros chars do PAT seguidos por "..." (ex: "abcdef...")
 ```
 
 ## NFRs

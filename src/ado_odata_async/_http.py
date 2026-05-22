@@ -9,8 +9,10 @@ from yarl import URL
 
 
 def build_url(base: URL, entity_set: str, query: dict[str, str] | None = None) -> URL:
-    """Build a v4.0-preview entity-set URL with canonical query option ordering (HR-9)."""
-    raise NotImplementedError("SPEC-007 will implement canonical query serializer")
+    url = base / entity_set
+    if query:
+        url = url.with_query(query)
+    return url
 
 
 async def parse_response(resp: aiohttp.ClientResponse) -> dict[str, Any]:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 
 import pytest
@@ -36,4 +37,5 @@ def base_url(fake_org: str, fake_project: str, odata_version: str) -> str:
 @pytest.fixture
 def mock_http() -> Iterator[aioresponses]:
     with aioresponses() as m:
+        m.get(re.compile(r".*"), repeat=True, payload={"value": []})
         yield m

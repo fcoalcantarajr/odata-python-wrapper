@@ -6,5 +6,5 @@ from typing import Any
 
 
 async def fetch_metadata(client: Any) -> dict[str, Any]:
-    """Fetch /_odata/v4.0-preview/$metadata and cache parsed CSDL."""
+    """Fetch OData $metadata and cache parsed CSDL. Version via ODATA_VERSION constant."""
     raise NotImplementedError("SPEC-012 will implement metadata fetch")
