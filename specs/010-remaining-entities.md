@@ -76,9 +76,84 @@ Then model_config.frozen == True
   And model_config.extra == "forbid"
 ```
 
+### AC-7: WorkItemBoardSnapshotWithDescription includes Description
+
+```
+Given OData JSON row with Description field
+When WorkItemBoardSnapshotWithDescription.model_validate(row)
+Then instance.Description is str
+```
+
+### AC-8: Area model
+
+```
+Given OData JSON row for Area
+When Area.model_validate(row)
+Then instance.AreaSK is int
+  And instance.AreaPath is str
+```
+
+### AC-9: Date model
+
+```
+Given OData JSON row for Date dimension
+When Date.model_validate(row)
+Then instance.DateSK is int (YYYYMMDD)
+  And instance.Year is int
+```
+
+### AC-10: User model
+
+```
+Given OData JSON row for User
+When User.model_validate(row)
+Then instance.UserSK is int
+  And instance.UserName is str
+```
+
+### AC-11: WorkItemType model
+
+```
+Given OData JSON row for WorkItemType
+When WorkItemType.model_validate(row)
+Then instance.WorkItemTypeSK is int
+  And instance.WorkItemTypeName is str
+```
+
+### AC-12: WorkItemLink model
+
+```
+Given OData JSON row for WorkItemLink
+When WorkItemLink.model_validate(row)
+Then instance.SourceWorkItemId is int
+  And instance.LinkType is str
+```
+
+## NFRs
+
+- **Performance:** Model validation ≤ 100µs per instance (benchmark opcional no test).
+- **Security:** N/A — models são data classes sem lógica de auth.
+- **Observability:** N/A — models não emitem log diretamente.
+
+## Out-of-scope
+
+- Entidades além dos 11 modelos listados (Build, Release, Test).
+- Navigation properties (`$expand`) entre entidades.
+- Entity sets da área "Build" ou "Release" do ADO Analytics OData.
+- Client methods que retornam typed entities (ex: `client.get_iteration(id_)`) — implementação via QueryBuilder (SPEC-011).
+- Validação de `$apply groupby` para BoardSnapshot (enforced no Apply DSL, HR-13).
+
 ## INVEST self-score
 
-Média: 8.3/10
+| Letra | Score | Justificativa |
+|-------|-------|--------------|
+| **I**ndependent | 8 | Depende de ODataEntity (SPEC-009), aditivo |
+| **N**egotiable | 8 | Field lists são negociáveis; 11 modelos são explícitos e acordados |
+| **V**aluable | 9 | Type safety e schema-drift-detection |
+| **E**stimable | 7 | 11 modelos nomeados com fields; escopo claro |
+| **S**mall | 8 | 11 modelos seguem o mesmo padrão de WorkItem (~15 linhas cada), total ~315 linhas — cabe em uma sessão |
+| **T**estable | 8 | ACs com type checking e valor assertions |
+| **Média** | **8.0** | |
 
 ## Test plan
 
@@ -88,6 +163,12 @@ Média: 8.3/10
 - AC-4 → `test_remaining_entities.py::test_ac4_project`
 - AC-5 → `test_remaining_entities.py::test_ac5_team`
 - AC-6 → `test_remaining_entities.py::test_ac6_all_frozen_strict`
+- AC-7 → `test_remaining_entities.py::test_ac7_board_snapshot_with_description`
+- AC-8 → `test_remaining_entities.py::test_ac8_area`
+- AC-9 → `test_remaining_entities.py::test_ac9_date`
+- AC-10 → `test_remaining_entities.py::test_ac10_user`
+- AC-11 → `test_remaining_entities.py::test_ac11_work_item_type`
+- AC-12 → `test_remaining_entities.py::test_ac12_work_item_link`
 
 ## DoD
 
