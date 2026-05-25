@@ -5,7 +5,7 @@
 
 - id: SPEC-010
 - slug: remaining-entities
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-05-22
 - owner: @opencode
 

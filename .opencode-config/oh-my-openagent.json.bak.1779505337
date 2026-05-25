@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json",
+
+  "agents": {
+    "sisyphus":          { "model": "openrouter/free", "fallback_models": ["openrouter/deepseek/deepseek-v4-flash:free", "openrouter/openai/gpt-oss-120b:free"] },
+    "prometheus":        { "model": "openrouter/free", "fallback_models": ["openrouter/deepseek/deepseek-v4-flash:free", "openrouter/openai/gpt-oss-120b:free"] },
+    "oracle":            { "model": "openrouter/free", "fallback_models": ["openrouter/deepseek/deepseek-v4-flash:free", "openrouter/nvidia/nemotron-3-super-120b-a12b:free"] },
+    "momus":             { "model": "openrouter/free", "fallback_models": ["openrouter/openai/gpt-oss-120b:free", "openrouter/deepseek/deepseek-v4-flash:free"] },
+    "metis":             { "model": "openrouter/free", "fallback_models": ["openrouter/qwen/qwen3-coder:free", "openrouter/deepseek/deepseek-v4-flash:free"] },
+    "hephaestus":        { "model": "openrouter/free", "fallback_models": ["openrouter/qwen/qwen3-coder:free", "openrouter/openai/gpt-oss-20b:free"] },
+    "atlas":             { "model": "openrouter/free", "fallback_models": ["openrouter/qwen/qwen3-coder:free", "openrouter/deepseek/deepseek-v4-flash:free"] },
+    "explore":           { "model": "openrouter/free", "fallback_models": ["openrouter/openai/gpt-oss-20b:free", "openrouter/qwen/qwen3-next-80b-a3b-instruct:free"] },
+    "librarian":         { "model": "openrouter/free", "fallback_models": ["openrouter/openai/gpt-oss-20b:free", "openrouter/meta-llama/llama-3.3-70b-instruct:free"] },
+    "sisyphus-junior":   { "model": "openrouter/free", "fallback_models": ["openrouter/openai/gpt-oss-20b:free", "openrouter/qwen/qwen3-coder:free"] },
+    "multimodal-looker": { "model": "openrouter/free", "fallback_models": ["openrouter/google/gemma-4-31b-it:free", "openrouter/nvidia/nemotron-nano-12b-v2-vl:free"] }
+  },
+
+  "background_task": {
+    "defaultConcurrency": 2,
+    "staleTimeoutMs": 180000,
+    "providerConcurrency": { "openrouter": 2 }
+  },
+
+  "experimental": {
+    "aggressive_truncation": true,
+    "task_system": true
+  },
+
+  "tmux": { "enabled": false }
+}

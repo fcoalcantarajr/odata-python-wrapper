@@ -5,15 +5,23 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator
 from types import TracebackType
-from typing import Any, Self, cast
+from typing import Any, Self
 
 import aiohttp
-from yarl import URL
 
-from ado_odata_async._http import build_url
-from ado_odata_async.auth import mask_pat
+from ado_odata_async._http import parse_response
+from ado_odata_async.auth import build_basic_auth, mask_pat
 from ado_odata_async.entities import WorkItem
 from ado_odata_async.pagination import iter_pages
+from ado_odata_async.query._batch import (
+    _BATCH_CONTENT_TYPE,
+    build_batch_get_body,
+    maybe_batch,
+    parse_batch_response,
+)
+from ado_odata_async.query._builder import QueryBuilder
+from ado_odata_async.query._serialize import serialize
+from ado_odata_async.retry import with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -29,21 +37,31 @@ class AdoODataClient:
     ClientSession creation/close (HR-7) and propagates cancellation cleanly.
     """
 
-    def __init__(self, *, org: str, project: str, pat: str) -> None:
+    def __init__(self, *, org: str, project: str, pat: str, batch_threshold: int = 3000) -> None:
         self._org = org
         self._project = project
         self._pat = pat
+        self._batch_threshold = batch_threshold
         self._session: aiohttp.ClientSession | None = None
         self._entered: bool = False
+        self._has_entered_once: bool = False
 
     async def __aenter__(self) -> Self:
+        if self._has_entered_once:
+            raise RuntimeError("re-entry forbidden — single ClientSession per client (HR-7)")
         if self._entered:
             raise RuntimeError("already entered")
         self._entered = True
-        auth = aiohttp.BasicAuth("", self._pat)
-        self._session = aiohttp.ClientSession(auth=auth)
+        self._session = aiohttp.ClientSession(auth=build_basic_auth(self._pat))
         logger.debug("client entered — pat=%s odata=%s", mask_pat(self._pat), ODATA_VERSION)
         return self
+
+    @property
+    def _service_root(self) -> str:
+        return (
+            f"https://analytics.dev.azure.com/"
+            f"{self._org}/{self._project}/_odata/{ODATA_VERSION}"
+        )
 
     async def __aexit__(
         self,
@@ -55,6 +73,7 @@ class AdoODataClient:
         await self._session.close()
         self._session = None
         self._entered = False
+        self._has_entered_once = True
         logger.debug("client exited — pat=%s odata=%s", mask_pat(self._pat), ODATA_VERSION)
 
     def __repr__(self) -> str:
@@ -64,16 +83,37 @@ class AdoODataClient:
             f"pat={mask_pat(self._pat)!r}, odata={ODATA_VERSION!r})"
         )
 
+    @with_retry
     async def get(self, entity_set: str, **params: str) -> dict[str, Any]:
         assert self._session is not None
-        base = URL(
-            f"https://analytics.dev.azure.com/"
-            f"{self._org}/{self._project}/_odata/{ODATA_VERSION}"
+        query_str = serialize(params) if params else ""
+        url_str = f"{self._service_root}/{entity_set}"
+        if query_str:
+            url_str = f"{url_str}?{query_str}"
+
+        method, final_url = maybe_batch(
+            "GET", url_str, service_root=self._service_root, threshold=self._batch_threshold
         )
-        url = build_url(base, entity_set, query=params or None)
-        async with self._session.get(url) as resp:
-            resp.raise_for_status()
-            return cast(dict[str, Any], await resp.json())
+
+        try:
+            if method == "POST":
+                logger.debug("batch switch: URL=%d chars -> POST $batch", len(url_str))
+                body = build_batch_get_body(url_str, self._service_root)
+                async with self._session.post(
+                    final_url,
+                    data=body.encode("utf-8"),
+                    headers={"Content-Type": _BATCH_CONTENT_TYPE},
+                ) as resp:
+                    if resp.status != 200:
+                        await parse_response(resp)
+                    raw = await resp.read()
+                    return dict(parse_batch_response(raw))
+            else:
+                async with self._session.get(final_url) as resp:
+                    return await parse_response(resp)
+        except aiohttp.ClientError as exc:
+            from ado_odata_async.exceptions import TransientError
+            raise TransientError(f"Connection error: {exc}") from exc
 
     async def get_workitem(self, id_: int) -> WorkItem:
         """Fetch a single WorkItem by its WorkItemId.
@@ -120,3 +160,16 @@ class AdoODataClient:
         if top < 1:
             raise ValueError("top must be >= 1")
         return iter_pages(self, entity_set, top=top, query=query)
+
+    def query(self, entity_set: str) -> QueryBuilder:
+        """Return a ``QueryBuilder`` bound to this client.
+
+        Args:
+            entity_set: OData entity set name (e.g. ``"WorkItems"``).
+
+        Returns:
+            ``QueryBuilder`` instance that can be chained with filter,
+            select, top, etc. and then executed via ``.get()`` or
+            ``.paginate()``.
+        """
+        return QueryBuilder(client=self, entity_set=entity_set)

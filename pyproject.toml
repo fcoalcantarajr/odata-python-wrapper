@@ -19,6 +19,7 @@ dependencies = [
   "tenacity>=9,<10",
   "yarl>=1.15,<2",
   "python-dateutil>=2.9,<3",
+  "python-dotenv>=1.2.2",
 ]
 
 [project.optional-dependencies]
@@ -96,4 +97,9 @@ exclude_lines = [
   "pragma: no cover",
   "raise NotImplementedError",
   "if TYPE_CHECKING:",
+]
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=5.0.0",
 ]

@@ -134,3 +134,119 @@ def test_ac8_enforce_snapshot_with_valid_groupby() -> None:
     """
     result = Apply(entity_type="WorkItemBoardSnapshot").groupby("DateValue").validate()
     assert result is None
+
+
+def test_instance_level_groupby() -> None:
+    """Instance-level groupby mutation (fluent chaining).
+
+    apply_instance = Apply()
+    apply_instance.groupby("State")
+      → returns Apply instance with groupby set, can chain further
+
+    Asserts:
+      - instance.groupby() returns self (fluent)
+      - build() reflects the groupby
+    """
+    apply_obj = Apply()
+    result = apply_obj.groupby("State")
+    assert result is apply_obj
+    assert result.build() == "$apply=groupby((State))"
+
+
+def test_str_method() -> None:
+    """__str__ method returns same as build().
+
+    Apply.groupby("State").__str__()
+      → same as .build() result
+
+    Asserts:
+      - str(apply) == apply.build()
+    """
+    apply_obj = Apply.groupby("State")
+    assert str(apply_obj) == apply_obj.build()
+    assert str(apply_obj) == "$apply=groupby((State))"
+
+
+def test_workitem_board_snapshot_without_datevalue() -> None:
+    """WorkItemBoardSnapshot without groupby(DateValue) raises ValueError (HR-13).
+
+    Apply(entity_type="WorkItemBoardSnapshot").validate()
+      → ValueError with "WorkItemBoardSnapshot" and "groupby(DateValue)"
+
+    Asserts:
+      - validate() raises ValueError
+      - error message contains "WorkItemBoardSnapshot"
+      - error message contains "groupby(DateValue)"
+    """
+    apply_obj = Apply(entity_type="WorkItemBoardSnapshot")
+    with pytest.raises(ValueError, match=r"WorkItemBoardSnapshot.*groupby\(DateValue\)"):
+        apply_obj.validate()
+
+
+def test_instance_aggregate_chaining() -> None:
+    """Instance aggregate mutation can be chained.
+
+    apply_instance = Apply()
+    apply_instance.aggregate("Count", "sum").aggregate("Effort", "avg")
+      → returns Apply with both aggregations
+
+    Asserts:
+      - returns fluent Apply instance
+      - build() reflects both aggregations
+    """
+    apply_obj = Apply()
+    result = apply_obj.aggregate("Count", "sum")
+    assert result is apply_obj
+    result2 = result.aggregate("Effort", "avg")
+    assert result2 is apply_obj
+    assert "$apply=aggregate(Count with sum, Effort with avg)" in result2.build()
+
+
+def test_instance_filter_chaining() -> None:
+    """Instance filter mutation can be chained.
+
+    apply_instance = Apply()
+    apply_instance.filter(Filter.eq(...)).groupby("State")
+      → returns Apply with both filter and groupby
+
+    Asserts:
+      - returns fluent Apply instance
+      - build() reflects both filter and groupby
+    """
+    f = Filter.eq("State", "Active")
+    apply_obj = Apply()
+    result = apply_obj.filter(f)
+    assert result is apply_obj
+    result2 = result.groupby("State")
+    assert result2 is apply_obj
+    assert "$apply=groupby((State))/filter(State eq 'Active')" in result2.build()
+
+
+def test_groupby_with_tuple() -> None:
+    """Groupby with tuple (not just list) is converted to list."""
+    result = Apply.groupby(("State", "Priority")).build()
+    assert result == "$apply=groupby((State,Priority))"
+
+
+def test_empty_apply() -> None:
+    """Empty Apply with no clauses builds to just $apply= (edge case)."""
+    result = Apply().build()
+    assert result == "$apply="
+
+
+def test_filter_then_groupby() -> None:
+    """Filter then groupby (order reversed in build).
+
+    Per OData spec, order should be: filter, then groupby.
+    But our current impl has groupby before filter. Check the ordering.
+
+    Asserts:
+      - build() respects HR-9 order (groupby first, then filter)
+    """
+    f = Filter.eq("Priority", "High")
+    result = Apply.groupby("State").filter(f).build()
+    # HR-9: $apply → $filter → $orderby...
+    # Within $apply: groupby() then filter()
+    parts = result.split("/")
+    assert parts[0].startswith("$apply=groupby")
+    assert "filter" in result

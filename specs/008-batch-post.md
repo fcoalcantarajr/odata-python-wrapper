@@ -5,7 +5,7 @@
 
 - id: SPEC-008
 - slug: batch-post
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-05-22
 - owner: @opencode
 

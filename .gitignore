@@ -42,3 +42,4 @@ Thumbs.db
 .opencode/cache/
 session-*
 session-ses_*.md
+.vscode

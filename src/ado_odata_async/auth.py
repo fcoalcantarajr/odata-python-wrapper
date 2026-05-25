@@ -6,7 +6,7 @@ import aiohttp
 
 
 def build_basic_auth(pat: str) -> aiohttp.BasicAuth:
-    raise NotImplementedError("SPEC-002 will implement auth construction")
+    return aiohttp.BasicAuth("", pat)
 
 
 def mask_pat(pat: str) -> str:

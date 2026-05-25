@@ -5,7 +5,7 @@
 
 - id: SPEC-006
 - slug: apply-dsl
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-05-22
 - owner: @opencode
 

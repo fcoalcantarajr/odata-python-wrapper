@@ -1,12 +1,4 @@
 {
   "$schema": "https://opencode.ai/config.json",
-
-  "telemetry": { "enabled": false },
-
-  "providers": {
-    "openrouter": { "enabled": true },
-    "opencode":   { "enabled": true }
-  },
-
-  "sessions": { "autoCompact": true, "autoCompactThreshold": 0.75 }
+  "enabled_providers": ["openrouter", "opencode"]
 }

@@ -5,7 +5,7 @@
 
 - id: SPEC-007
 - slug: serialization-order
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-05-22
 - owner: @opencode
 

@@ -5,7 +5,7 @@
 
 - id: SPEC-011
 - slug: fluent-api
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-05-22
 - owner: @opencode
 
@@ -40,23 +40,23 @@ Then ""
 ```
 Given builder.filter(Filter.eq("State","Active")).select(["Title","State"]).top(10)
 When str(builder)
-Then contains "$filter" then "$select" then "$top" in canonical order
+Then "$filter=State eq 'Active'&$select=Title,State&$top=10"
 ```
 
 ### AC-3: get() executes and parses
 
 ```
-Given builder.filter(...).get()
-When called
-Then returns list[dict] from HTTP response
+Given aioresponses mock GET ".../WorkItems?$filter=State eq 'Active'" returning {"value":[{"Id":1,"Title":"Bug A"}]}
+When await builder.filter(Filter.eq("State","Active")).get()
+Then dict with {"value":[{"Id":1,"Title":"Bug A"}]}
 ```
 
 ### AC-4: paginate() returns async iterator
 
 ```
-Given builder.filter(...).paginate(top=100)
-When used in async for
-Then yields pages
+Given aioresponses mock 2 pages: page1 with 2 items + @odata.nextLink, page2 with 1 item
+When async for page in builder.paginate(top=2)
+Then len(pages) == 2, first page has 2 items, second page has 1 item
 ```
 
 ### AC-5: chaining preserves immutability
@@ -64,13 +64,33 @@ Then yields pages
 ```
 Given b1 = query.filter(...)
   And b2 = b1.top(10)
-When compared
-Then str(b1) != str(b2)
+When str(b1) and str(b2)
+Then str(b1) == "" and str(b2) == "$top=10"
 ```
+
+## NFRs
+
+- **Performance**: `str(builder)` deve ser O(n) no número de cláusulas, sem I/O.
+- **Security**: Builder não armazena PAT; execução delega ao `client._session`.
+- **Observability**: `repr(builder)` expõe entity set e cláusulas ativas.
+
+## Out-of-scope
+
+- Type hints genéricos por entity set (`QueryBuilder[WorkItem]`).
+- Validação semântica de campos (ex: verificar se `State` existe no ADO).
+- Mutação in-place (sempre retorna nova instância).
+- Suporte a `$search` (não coberto pelos DSLs base).
 
 ## INVEST self-score
 
-Média: 8.5/10
+- **I**ndependent: 7/10 — Depende de SPEC-004/005/006/007.
+- **N**egotiable: 8/10 — Nomes dos métodos podem mudar.
+- **V**aluable: 9/10 — Composição type-safe de queries complexas.
+- **E**stimable: 8/10 — Wrapper sobre DSLs existentes.
+- **S**mall: 8/10 — Wrapper sobre DSLs existentes; padrão repetitivo.
+- **T**estable: 8/10 — ACs com strings exatas e assertions de igualdade.
+
+Média: 8.0/10
 
 ## Test plan
 

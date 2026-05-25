@@ -5,7 +5,7 @@
 
 - id: SPEC-001
 - slug: http-skeleton
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-05-19
 - owner: @fcoalcantarajr
 

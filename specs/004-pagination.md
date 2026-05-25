@@ -5,7 +5,7 @@
 
 - id: SPEC-004
 - slug: pagination
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-05-22
 - owner: @opencode
 

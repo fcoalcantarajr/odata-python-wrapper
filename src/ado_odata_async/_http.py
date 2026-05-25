@@ -1,4 +1,4 @@
-"""Low-level HTTP helpers (request building, response parsing)."""
+"""Low-level HTTP helpers (response parsing)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,6 @@ import logging
 from typing import Any
 
 import aiohttp
-from yarl import URL
 
 from ado_odata_async.exceptions import (
     AuthenticationError,
@@ -16,13 +15,6 @@ from ado_odata_async.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def build_url(base: URL, entity_set: str, query: dict[str, str] | None = None) -> URL:
-    url = base / entity_set
-    if query:
-        url = url.with_query(query)
-    return url
 
 
 async def parse_response(resp: aiohttp.ClientResponse) -> dict[str, Any]:

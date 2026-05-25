@@ -38,7 +38,7 @@ class Apply:
         present (gotcha 4 / HR-13).
     """
 
-    __slots__ = ("_groupby_fields", "_filter_expr", "_aggregations", "_entity_type")
+    __slots__ = ("_aggregations", "_entity_type", "_filter_expr", "_groupby_fields")
 
     def __init__(self, entity_type: str | None = None) -> None:
         self._groupby_fields: list[str] = []
@@ -64,11 +64,13 @@ class Apply:
         ``instance.groupby(fields)`` — mutates and returns self.
         """
         if isinstance(self, Apply):
-            fields: str | list[str] = args[0]
-            if isinstance(fields, str):
-                self._groupby_fields = [fields]
+            # Instance path: args contains all positional arguments
+            if len(args) == 1 and isinstance(args[0], list | tuple):
+                # Single list/tuple argument
+                self._groupby_fields = list(args[0])
             else:
-                self._groupby_fields = list(fields)
+                # Multiple string arguments
+                self._groupby_fields = [arg for arg in args if isinstance(arg, str)]
             return self
         # Class-level shortcut: self is the first argument (fields)
         instance = Apply()  # type: ignore[unreachable]  # reason: intentional dual-role — self is fields at class level

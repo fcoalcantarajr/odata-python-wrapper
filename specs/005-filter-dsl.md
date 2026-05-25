@@ -5,7 +5,7 @@
 
 - id: SPEC-005
 - slug: filter-dsl
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-05-22
 - owner: @opencode
 

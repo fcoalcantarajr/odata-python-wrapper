@@ -50,7 +50,7 @@ class Filter:
     Call ``.build()`` to get the OData ``$filter`` string.
     """
 
-    __slots__ = ("_kind", "_field", "_operator", "_value", "_children")
+    __slots__ = ("_children", "_field", "_kind", "_operator", "_value")
 
     def __init__(
         self,
