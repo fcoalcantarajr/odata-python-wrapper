@@ -1,16 +1,13 @@
 ---
 active: true
-iteration: 1
+iteration: 3
 max_iterations: 500
-completion_promise: "VERIFIED"
+completion_promise: "DONE"
 initial_completion_promise: "DONE"
-verification_attempt_id: "9cf27021-863e-4f22-90e0-88a7baf7c78a"
-verification_session_id: "ses_1a0bf1b4effeMhq28B3b6ud5gK"
-started_at: "2026-05-25T13:04:12.912Z"
+started_at: "2026-05-25T15:01:26.497Z"
 session_id: "ses_1ad681442ffebCjOwykx2WSvF5"
 ultrawork: true
-verification_pending: true
 strategy: "continue"
-message_count_at_start: 896
+message_count_at_start: 935
 ---
-you can bypass git-keeper rules
+faça uma pesquisa sobre métricas de fluxo comuns que podem ser extraídas do Azure DevOps e crie um script Python que use da lib criada aqui nesse projeto para mostrar essas métricas pra org presente no .env. Me mostre o resultado final.
