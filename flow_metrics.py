@@ -14,9 +14,10 @@ Usage:
     python flow_metrics.py
 """
 
+import argparse
+import os
 import asyncio
 import logging
-import os
 from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -27,6 +28,10 @@ from pydantic import BaseModel, Field
 
 from ado_odata_async import AdoODataClient
 from ado_odata_async.query import Apply, Filter
+
+# Override OData version for compatibility with PAT access level
+import ado_odata_async.client as client_mod
+client_mod.ODATA_VERSION = "v2.0"
 
 # Load environment
 load_dotenv()
@@ -234,20 +239,26 @@ class FlowMetrics:
             
             cfd_data["Date"].append(i)
             
-            result = await (
-                self.client.query("WorkItemSnapshot")
-                .apply(
-                    Apply()
-                    .filter(
-                        Filter.and_(
-                            Filter.eq("DateSK", date_str),
+            try:
+                result = await (
+                    self.client.query("WorkItemSnapshot")
+                    .apply(
+                        Apply()
+                        .filter(
+                            Filter.and_(
+                                Filter.ge("DateSK", date_str),
+                                Filter.le("DateSK", date_str),
+                                Filter.eq("State", "Done")
+                            )
                         )
+                        .groupby("DateSK", "State")  # Required for HR-13
+                .aggregate("Count", "sum")  # Count rows
+
                     )
-                    .groupby("DateSK", "State")  # Required for HR-13
-                    .aggregate("Count", "WorkItemId")
+                    .get()
                 )
-                .get()
-            )
+            except AdoODataError as e:
+                raise ValueError(f"API Error: {str(e)}") from e
             
             # Initialize all states to 0
             for state in all_states:
@@ -307,7 +318,7 @@ async def main():
         print("\n📈 CUMULATIVE FLOW DIAGRAM")
         print("-" * 30)
         cfd_data = await metrics.get_cfd_data(days=7)  # Last 7 days
-        print("  Date    | " + " | ".join(f"{s[:8]:>8}" for s in cfd_data.keys() if s != "Date"))
+        print("  Date    | " + " | ".join(f"{state[:8]:>8}" for state in cfd_data.keys() if state != "Date"))
         
         for i, date_offset in enumerate(cfd_data["Date"]):
             date_str = (datetime.now() - timedelta(days=date_offset)).strftime("%m-%d")

@@ -1,13 +1,12 @@
 ---
 active: true
 iteration: 3
-max_iterations: 500
+max_iterations: 100
 completion_promise: "DONE"
 initial_completion_promise: "DONE"
-started_at: "2026-05-25T15:01:26.497Z"
+started_at: "2026-05-25T16:09:03.404Z"
 session_id: "ses_1ad681442ffebCjOwykx2WSvF5"
-ultrawork: true
 strategy: "continue"
-message_count_at_start: 935
+message_count_at_start: 992
 ---
-faça uma pesquisa sobre métricas de fluxo comuns que podem ser extraídas do Azure DevOps e crie um script Python que use da lib criada aqui nesse projeto para mostrar essas métricas pra org presente no .env. Me mostre o resultado final.
+I've updated the env file, test the script again and fix it until it works
