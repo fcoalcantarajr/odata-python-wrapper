@@ -35,9 +35,9 @@ async def main() -> None:
             items.extend(page.get("value", []))
             if len(items) >= 500: break
 
-        # Query 2: open / in-progress items (for real WIP — StateCategory not Completed)
+        # Query 2: open / in-progress items (for real WIP — exclude completed + removed)
         async for page in client.paginate("WorkItems", top=200, query={
-            "$filter": "StateCategory ne 'Completed'",
+            "$filter": "StateCategory ne 'Completed' and StateCategory ne 'Removed'",
             "$select": "WorkItemId,Title,State,WorkItemType,CreatedDate,ActivatedDate,ClosedDate,StateChangeDate",
             "$orderby": "CreatedDate desc",
         }):
