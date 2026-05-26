@@ -1,0 +1,102 @@
+[
+  {
+    "WorkItemId": 48698,
+    "Title": "(Card Original: 14213) [REQ] Cria\u00e7\u00e3o da HU",
+    "WorkItemType": "Tarefa",
+    "CreatedDate": "2026-04-29T14:32:23.693Z",
+    "State": "Conclu\u00eddo",
+    "ActivatedDate": null,
+    "ClosedDate": "2026-05-12T15:50:21.493Z",
+    "StateChangeDate": "2026-05-12T15:50:21.493Z"
+  },
+  {
+    "WorkItemId": 48697,
+    "Title": "(Card Original: 14212) [REQ] Cria\u00e7\u00e3o da HU",
+    "WorkItemType": "Tarefa",
+    "CreatedDate": "2026-04-29T14:31:06.533Z",
+    "State": "Conclu\u00eddo",
+    "ActivatedDate": null,
+    "ClosedDate": "2026-05-12T15:50:18.3Z",
+    "StateChangeDate": "2026-05-12T15:50:18.3Z"
+  },
+  {
+    "WorkItemId": 48700,
+    "Title": "(Card Original: 14230) [REQ] Cria\u00e7\u00e3o HU",
+    "WorkItemType": "Tarefa",
+    "CreatedDate": "2026-04-30T11:21:03.483Z",
+    "State": "Conclu\u00eddo",
+    "ActivatedDate": null,
+    "ClosedDate": "2026-05-12T15:50:15.557Z",
+    "StateChangeDate": "2026-05-12T15:50:15.557Z"
+  },
+  {
+    "WorkItemId": 48703,
+    "Title": "(Card Original: 14231) [REQ] Cria\u00e7\u00e3o HU",
+    "WorkItemType": "Tarefa",
+    "CreatedDate": "2026-04-30T11:21:12.723Z",
+    "State": "Conclu\u00eddo",
+    "ActivatedDate": null,
+    "ClosedDate": "2026-05-12T15:50:12.32Z",
+    "StateChangeDate": "2026-05-12T15:50:12.32Z"
+  },
+  {
+    "WorkItemId": 48702,
+    "Title": "(Card Original: 14232) [REQ] Cria\u00e7\u00e3o HU",
+    "WorkItemType": "Tarefa",
+    "CreatedDate": "2026-04-30T11:21:21.207Z",
+    "State": "Conclu\u00eddo",
+    "ActivatedDate": null,
+    "ClosedDate": "2026-05-12T15:50:08.237Z",
+    "StateChangeDate": "2026-05-12T15:50:08.237Z"
+  },
+  {
+    "WorkItemId": 48701,
+    "Title": "(Card Original: 14229) [REQ] Cria\u00e7\u00e3o HU",
+    "WorkItemType": "Tarefa",
+    "CreatedDate": "2026-04-30T11:08:38.333Z",
+    "State": "Conclu\u00eddo",
+    "ActivatedDate": null,
+    "ClosedDate": "2026-05-12T15:50:05.917Z",
+    "StateChangeDate": "2026-05-12T15:50:05.917Z"
+  },
+  {
+    "WorkItemId": 48699,
+    "Title": "(Card Original: 14214) [REQ] Cria\u00e7\u00e3o da HU",
+    "WorkItemType": "Tarefa",
+    "CreatedDate": "2026-04-29T15:01:03.72Z",
+    "State": "Conclu\u00eddo",
+    "ActivatedDate": null,
+    "ClosedDate": "2026-05-12T15:50:04.83Z",
+    "StateChangeDate": "2026-05-12T15:50:04.83Z"
+  },
+  {
+    "WorkItemId": 48711,
+    "Title": "(Card Original: 14296) [UX] - Realizando altera\u00e7\u00f5es do prot\u00f3tipo com os novos componentes",
+    "WorkItemType": "Tarefa",
+    "CreatedDate": "2026-05-11T09:33:30.273Z",
+    "State": "Conclu\u00eddo",
+    "ActivatedDate": "2026-05-11T09:33:33.83Z",
+    "ClosedDate": "2026-05-12T09:35:29.753Z",
+    "StateChangeDate": "2026-05-12T09:35:29.753Z"
+  },
+  {
+    "WorkItemId": 48723,
+    "Title": "(Card Original: 14313) [DEV] [analisa-ai] - Testes unit\u00e1rios e cobertura Jacoco",
+    "WorkItemType": "Tarefa",
+    "CreatedDate": "2026-05-11T15:21:25.31Z",
+    "State": "Conclu\u00eddo",
+    "ActivatedDate": "2026-05-11T15:26:14.983Z",
+    "ClosedDate": "2026-05-11T15:26:17.86Z",
+    "StateChangeDate": "2026-05-11T15:26:17.86Z"
+  },
+  {
+    "WorkItemId": 48722,
+    "Title": "(Card Original: 14312) [DEV] [analisa-ai] - Implementa\u00e7\u00e3o GedDocumentosConfig e tipoCompativel",
+    "WorkItemType": "Tarefa",
+    "CreatedDate": "2026-05-11T15:20:53.37Z",
+    "State": "Conclu\u00eddo",
+    "ActivatedDate": "2026-05-11T15:26:07.923Z",
+    "ClosedDate": "2026-05-11T15:26:10.967Z",
+    "StateChangeDate": "2026-05-11T15:26:10.967Z"
+  }
+]

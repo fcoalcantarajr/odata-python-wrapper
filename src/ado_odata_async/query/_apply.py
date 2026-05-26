@@ -6,7 +6,7 @@ expressions with ``groupby``, ``filter``, and ``aggregate`` support::
     >>> Apply.groupby("State").build()
     "$apply=groupby((State))"
     >>> Apply.groupby(["State","Priority"]).aggregate("Count","sum").build()
-    "$apply=groupby((State,Priority))/aggregate(Count with sum)"
+    "$apply=groupby((State,Priority))/aggregate(Count with sum as Count)"
     >>> Apply.filter(Filter.eq("State","Active")).build()
     "$apply=filter(State eq 'Active')"
 """
@@ -155,7 +155,10 @@ class Apply:
             parts.append(f"filter({self._filter_expr.build()})")
 
         if self._aggregations:
-            agg_parts = [f"{field} with {method}" for field, method in self._aggregations]
+            agg_parts = [
+                f"{field} with {method} as {field}"
+                for field, method in self._aggregations
+            ]
             parts.append(f"aggregate({', '.join(agg_parts)})")
 
         return f"$apply={'/'.join(parts)}"
