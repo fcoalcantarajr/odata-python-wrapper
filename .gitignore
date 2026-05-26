@@ -43,3 +43,14 @@ Thumbs.db
 session-*
 session-ses_*.md
 .vscode
+
+# Quarantine session state
+.omo/run-continuation/
+.omo/*.local.md
+*.backup
+
+# Quarantine session state
+.omo/run-continuation/
+.omo/*.local.md
+*.backup
+.omo/
