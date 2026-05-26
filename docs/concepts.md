@@ -250,7 +250,7 @@ Se você está acostumado com código sequencial (roda linha 1, depois linha 2, 
 
 ### O problema
 
-Seu código precisa buscar dados na internet. Uma requisição HTTP pode levar de 100ms a 5 segundos. No código **síncrono**, o programa simplesmente **para** e espera:
+Seu código precisa buscar dados na internet. Uma requisição HTTP pode levar de 100ms a 5 segundos. No código **síncrono**, o programa **para** e espera:
 
 ```
 linha 1: buscar dados (2 segundos de espera... programa travado...)

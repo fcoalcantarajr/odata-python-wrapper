@@ -65,7 +65,7 @@ O PAT é a "senha" que seu script vai usar para acessar o Azure DevOps. Siga est
 5. Dê um nome como `ado-odata-async-estagio`.
 6. Em **Organization**, selecione sua organização.
 7. Em **Expiration**, escolha **30 dias** (nunca use "Never expiring" em ambiente bancário).
-8. Em **Scopes**, clique em **Show all scopes** e marque APENAS:
+8. Em **Scopes**, clique em **Show all scopes** e selecione exclusivamente:
    - **Work Items** → **Read** (leitura de work items)
    - **Analytics** → **Read** (leitura de métricas)
 9. Clique em **Create**.

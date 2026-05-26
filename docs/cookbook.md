@@ -57,7 +57,7 @@ asyncio.run(main())
 
 ## 2. Filtrar por estado e intervalo de datas
 
-**Quando você precisa**: buscar apenas bugs abertos das últimas duas semanas.
+**Quando você precisa**: buscar bugs abertos das últimas duas semanas.
 
 ```python
 """Receita 2: filtrar bugs ativos das últimas 2 semanas."""
@@ -162,6 +162,7 @@ asyncio.run(main())
 ```python
 """Receita 4: calcular cycle time dos items fechados."""
 import asyncio
+from datetime import datetime
 import os
 from pathlib import Path
 
@@ -183,7 +184,6 @@ def parse_date(val: str | None):
 
 
 async def main() -> None:
-    from datetime import datetime
     from ado_odata_async import AdoODataClient
 
     ciclo_dias = []
@@ -289,7 +289,7 @@ Distribuição por tipo:
   User Story       12  ████████████
 ```
 
-**Como funciona**: Usamos `collections.Counter` para contar cada tipo. A paginação garante que pegamos todos os items do projeto (não apenas os 200 primeiros). O loop `async for page in ...` consome uma página por vez.
+**Como funciona**: Usamos `collections.Counter` para contar cada tipo. A paginação garante que pegamos todos os items do projeto, não só os 200 primeiros. O loop `async for page in ...` consome uma página por vez.
 
 ---
 

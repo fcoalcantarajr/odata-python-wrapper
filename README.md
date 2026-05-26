@@ -148,7 +148,7 @@ Veja explicações completas em [`docs/concepts.md`](docs/concepts.md).
 
 > ⚠️ **Contexto bancário**: seu PAT (Personal Access Token) é uma senha que dá acesso de leitura ao Azure DevOps da organização. Trate-o com o mesmo cuidado que sua senha do banco.
 
-1. **Escopo mínimo**: ao criar o PAT, marque APENAS as permissões:
+1. **Escopo mínimo**: ao criar o PAT, selecione exclusivamente as permissões:
    - `Work Items (Read)`
    - `Analytics (Read)`
    - Nada mais. Princípio do menor privilégio.
