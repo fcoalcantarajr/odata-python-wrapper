@@ -19,6 +19,7 @@ Each test maps to one AC from specs/006-apply-dsl.md:
 
 from __future__ import annotations
 
+
 import pytest
 
 from ado_odata_async.query._apply import Apply
@@ -72,10 +73,10 @@ def test_ac4_aggregate_method() -> None:
       → "$apply=aggregate(Effort with sum)"
 
     Asserts:
-      - build() returns "$apply=aggregate(Effort with sum)"
+      - build() returns "$apply=aggregate(Effort with sum as Effort)"
     """
     result = Apply.aggregate("Effort", "sum").build()
-    assert result == "$apply=aggregate(Effort with sum)"
+    assert result == "$apply=aggregate(Effort with sum as Effort)"  # spec-correction: SPEC-006 ADO requires "as <alias>" per OData v4.0; legacy assertion was incorrect
 
 
 def test_ac5_groupby_then_aggregate() -> None:
@@ -88,20 +89,20 @@ def test_ac5_groupby_then_aggregate() -> None:
       - build() returns the full composed $apply string
     """
     result = Apply.groupby(["TeamProject", "WorkItemType"]).aggregate("Count", "sum").build()
-    assert result == ("$apply=groupby((TeamProject,WorkItemType))/aggregate(Count with sum)")
+    assert result == ("$apply=groupby((TeamProject,WorkItemType))/aggregate(Count with sum as Count)")  # spec-correction: SPEC-006 ADO requires "as <alias>" per OData v4.0; legacy assertion was incorrect
 
 
 def test_ac6_multiple_aggregations() -> None:
     """AC-6: multiple aggregations in the same groupby scope.
 
     Apply.groupby("State").aggregate("Count","sum").aggregate("Effort","avg").build()
-      → result contains "aggregate(Count with sum, Effort with avg)"
+      → result contains "aggregate(Count with sum as Count, Effort with avg as Effort)"
 
     Asserts:
-      - build() contains "aggregate(Count with sum, Effort with avg)"
+      - build() contains "aggregate(Count with sum as Count, Effort with avg as Effort)"
     """
     result = Apply.groupby("State").aggregate("Count", "sum").aggregate("Effort", "avg").build()
-    assert "aggregate(Count with sum, Effort with avg)" in result
+    assert "aggregate(Count with sum as Count, Effort with avg as Effort)" in result  # spec-correction: SPEC-006 ADO requires "as <alias>" per OData v4.0; legacy assertion was incorrect
 
 
 def test_ac7_enforce_snapshot_requires_groupby() -> None:
@@ -199,7 +200,7 @@ def test_instance_aggregate_chaining() -> None:
     assert result is apply_obj
     result2 = result.aggregate("Effort", "avg")
     assert result2 is apply_obj
-    assert "$apply=aggregate(Count with sum, Effort with avg)" in result2.build()
+    assert "$apply=aggregate(Count with sum as Count, Effort with avg as Effort)" in result2.build()  # spec-correction: SPEC-006 ADO requires "as <alias>" per OData v4.0; legacy assertion was incorrect
 
 
 def test_instance_filter_chaining() -> None:

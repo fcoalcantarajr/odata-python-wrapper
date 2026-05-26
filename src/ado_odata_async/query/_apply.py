@@ -156,8 +156,7 @@ class Apply:
 
         if self._aggregations:
             agg_parts = [
-                f"{field} with {method} as {field}"
-                for field, method in self._aggregations
+                f"{field} with {method} as {field}" for field, method in self._aggregations
             ]
             parts.append(f"aggregate({', '.join(agg_parts)})")
 

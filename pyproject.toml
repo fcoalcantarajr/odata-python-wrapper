@@ -80,10 +80,11 @@ files = ["src/ado_odata_async"]
 minversion = "8.0"
 addopts = "-q --strict-markers --strict-config"
 asyncio_mode = "auto"
-testpaths = ["tests"]
 markers = [
-  "integration: marca testes que batem em serviço real (skip por default)",
+    "integration: marca testes que batem em serviço real (skip por default)",
+    "asyncio: mark async test functions for pytest-asyncio",
 ]
+testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
