@@ -1,181 +1,202 @@
 # ado-odata-async
 
-Async Python client for **Azure DevOps Analytics OData** focused on **Work Tracking** (Boards).
+Cliente **Python assíncrono** para o **Azure DevOps Analytics OData** — focado em dados de Work Tracking (Boards).
 
-- OData **v4.0-preview** (ADR-001)
-- `aiohttp` + `pydantic` + `tenacity`
-- Immutable chainable [QueryBuilder](https://github.com/ohmyopencode/odata-python-wrapper/blob/main/src/ado_odata_async/query/_builder.py)
-- SDLC **SDD + TDD** with autonomous agents (opencode + omo)
+---
 
-## Installation
+## Sobre
 
-```bash
-uv add ado-odata-async
-```
+O `ado-odata-async` é uma biblioteca que permite consultar dados do Azure Boards (work items, histórico, métricas de fluxo) usando a API Analytics OData do Azure DevOps. Ela foi construída para ser **rápida**, **segura** e **fácil de usar** — mesmo se você nunca ouviu falar de OData ou async/await.
 
-Requires Python ≥ 3.12.
+Tudo o que você precisa:
+- Um PAT (Personal Access Token) com permissão de leitura
+- Python 3.12 ou superior
+- Dois minutos para instalar e rodar
 
-## Quick start
+---
+
+## Por que existe?
+
+A Microsoft mantém o pacote [`azure-devops-python-api`](https://github.com/microsoft/azure-devops-python-api), que é completo mas:
+
+| Problema | Como o ado-odata-async resolve |
+|---|---|
+| Usa `requests` (síncrono) | Totalmente `async` com `aiohttp` — não bloqueia enquanto espera a rede |
+| Dados genéricos (`dict`) | Retorna modelos Pydantic congelados (`WorkItem`, `WorkItemRevisions`, etc.) com tipos estritos |
+| Foco em REST API (Azure DevOps) | Foco exclusivo em **Analytics OData** — a fonte certa para métricas de fluxo |
+| Query string montada na mão | QueryBuilder fluente com autocomplete e serialização garantida |
+| Erros genéricos | Exceções tipadas: `AuthenticationError`, `BadRequestError`, `TransientError`, `RateLimitError` |
+
+Se você precisa de **cycle time**, **throughput**, **WIP** ou qualquer métrica de fluxo a partir do Azure Boards, esta biblioteca é para você.
+
+---
+
+## Início rápido
+
+> ⏱ **5 minutos** do clone ao primeiro resultado.
 
 ```python
+"""Primeira consulta com ado-odata-async."""
 import asyncio
-from ado_odata_async import AdoODataClient
-from ado_odata_async.query import Filter
+import os
+import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Carrega .env do diretório atual (não do diretório do script)
+env_path = Path(".env")
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+
+# Lê credenciais — suporta ADO_* e AZURE_DEVOPS_* como fallback
+pat = os.environ.get("ADO_PAT") or os.environ.get("AZURE_DEVOPS_PAT") or ""
+org = os.environ.get("ADO_ORG") or os.environ.get("AZURE_DEVOPS_ORG") or ""
+project = os.environ.get("ADO_PROJECT") or os.environ.get("AZURE_DEVOPS_PROJECT") or ""
+
+if not pat or not org or not project:
+    print("ERRO: defina ADO_PAT, ADO_ORG e ADO_PROJECT no .env")
+    sys.exit(1)
+
+print(f"Conectando em {org}/{project} ...")
+
 
 async def main() -> None:
-    async with AdoODataClient(
-        org="myorg",
-        project="myproject",
-        pat="your-pat-token",
-    ) as client:
-        # Simple query
+    from ado_odata_async import AdoODataClient
+    from ado_odata_async.query import Filter
+
+    async with AdoODataClient(org=org, project=project, pat=pat) as client:
         result = await (
             client.query("WorkItems")
-            .filter(Filter.eq("State", "Active"))
-            .select("WorkItemId", "Title", "State")
-            .top(10)
+            .select("WorkItemId", "Title", "State", "WorkItemType")
+            .top(5)
             .get()
         )
-        for item in result["value"]:
-            print(item["WorkItemId"], item["Title"])
+
+    items = result.get("value", [])
+    print(f"\nEncontrados {len(items)} work items:\n")
+    for item in items:
+        print(f"  #{item['WorkItemId']}  [{item['WorkItemType']}]  {item['State']:20s}  {item['Title']}")
+
 
 asyncio.run(main())
 ```
 
-## Features
+> **Antes de rodar**: crie um arquivo `.env` na raiz do projeto com:
+> ```
+> ADO_ORG=sua-org
+> ADO_PROJECT=seu-projeto
+> ADO_PAT=seu-personal-access-token
+> ```
+> Veja o [guia de início rápido](docs/getting-started.md) para instruções passo a passo.
 
-| Feature | Description |
-|---------|-------------|
-| **Chainable QueryBuilder** | Immutable `.filter()`, `.select()`, `.top()`, `.skip()`, `.orderby()`, `.expand()`, `.apply()` |
-| **Filter DSL** | Expression tree with `Filter.eq/ne/and_/or_/not_/contains` — auto-escaping and parentheses |
-| **Apply DSL** | `$apply` builder for `WorkItemSnapshot` with `groupby` + `aggregate` |
-| **Pagination** | Async iterator via `$skip`/`$top` or `@odata.nextLink` |
-| **Batch** | Automatic `POST $batch` when URL exceeds 3000 chars |
-| **Retry** | Exponential backoff with jitter, retries only `TransientError`/`RateLimitError` |
-| **Typed errors** | `AuthenticationError`, `BadRequestError`, `RateLimitError`, `TransientError` |
-| **Entities** | Pydantic frozen+strict models: `WorkItem`, `WorkItemRevisions`, `Iteration`, `Project`, `Team`, `Area`, `Date`, `User`, `WorkItemType`, `WorkItemLink`, `WorkItemBoardSnapshot` |
-| **Immutability** | All builders return new instances — no mutation |
+---
 
-## Usage examples
+## Exemplos
 
-### Filter with pagination
+A pasta [`demo_flow_metrics.py`](demo_flow_metrics.py) contém um script completo (109 linhas) que calcula:
+
+- **Cycle time** — tempo médio que os items ficam em Active até Closed
+- **Throughput semanal** — quantos items são fechados por semana
+- **WIP diário** — quantos items estão em andamento a cada dia
 
 ```python
+# Trecho: calculando cycle time com a API paginada
+from ado_odata_async import AdoODataClient
 from ado_odata_async.query import Filter
 
-async for page in (
-    client.query("WorkItems")
-    .filter(Filter.and_(Filter.eq("WorkItemType", "Bug"), Filter.eq("State", "Active")))
-    .select("WorkItemId", "Title")
-    .paginate(top=50)
-):
-    for item in page["value"]:
-        print(item["WorkItemId"], item["Title"])
+async with AdoODataClient(org=org, project=project, pat=pat) as client:
+    async for page in client.paginate(
+        "WorkItems",
+        top=200,
+        query={
+            "$filter": "StateCategory eq 'Completed'",
+            "$select": "WorkItemId,Title,State,CreatedDate,ActivatedDate,ClosedDate",
+            "$orderby": "ClosedDate desc",
+        },
+    ):
+        for item in page.get("value", []):
+            print(item["WorkItemId"], item["Title"], item.get("ClosedDate"))
 ```
 
-### Apply + groupby for WorkItemSnapshot
+---
 
-WorkItemSnapshot requires `$apply` with `groupby` on `DateSK` (HR-13 gotcha 4):
+## Conceitos rápidos
 
-```python
-from ado_odata_async.query import Apply
+| Conceito | Em uma frase |
+|---|---|
+| **OData** | É um padrão REST com uma linguagem de consulta poderosa — como SQL para URLs. Você usa `$filter`, `$select`, `$top` para buscar exatamente o que precisa. |
+| **Flow metrics** | São métricas que medem o fluxo de trabalho: cycle time (tempo de entrega), throughput (quantidade entregue) e WIP (trabalho em andamento). |
 
-result = await (
-    client.query("WorkItemSnapshot")
-    .apply(
-        Apply()
-        .filter(Filter.eq("State", "Active"))
-        .groupby("DateSK", "State")
-        .aggregate("Count", "WorkItemId")
-    )
-    .top(10)
-    .get()
-)
-```
+Veja explicações completas em [`docs/concepts.md`](docs/concepts.md).
 
-### Fetch single WorkItem
+---
 
-```python
-wi = await client.get_workitem(42)
-print(f"#{wi.WorkItemId}: {wi.Title} ({wi.WorkItemType})")
-```
+## Documentação completa
 
-### Error handling
+| Arquivo | O que contém |
+|---|---|
+| [`docs/getting-started.md`](docs/getting-started.md) | Instalação, criação de PAT, primeiro script passo a passo |
+| [`docs/concepts.md`](docs/concepts.md) | OData, WorkItems vs Revisions vs Snapshot, flow metrics, async/await |
+| [`docs/cookbook.md`](docs/cookbook.md) | 8 receitas práticas: filtrar, paginar, calcular cycle time, exportar CSV, tratar erros |
+| [`docs/troubleshooting.md`](docs/troubleshooting.md) | Erros comuns: 401, 400, 203, ValidationError — sintoma → causa → solução |
+| [`docs/glossary.md`](docs/glossary.md) | Definições de todos os termos técnicos usados na biblioteca |
 
-```python
-from ado_odata_async import AuthenticationError, BadRequestError
+---
 
-try:
-    result = await client.get("WorkItems", **{"$filter": "WorkItemType eq 'Bug'"})
-except AuthenticationError:
-    print("PAT inválido ou expirado")
-except BadRequestError as e:
-    print(f"Bad request: {e}")
-```
+## Segurança do PAT
 
-See [`docs/cookbook.md`](docs/cookbook.md) for 12 worked examples.
+> ⚠️ **Contexto bancário**: seu PAT (Personal Access Token) é uma senha que dá acesso de leitura ao Azure DevOps da organização. Trate-o com o mesmo cuidado que sua senha do banco.
 
-## Architecture
+1. **Escopo mínimo**: ao criar o PAT, marque APENAS as permissões:
+   - `Work Items (Read)`
+   - `Analytics (Read)`
+   - Nada mais. Princípio do menor privilégio.
 
-```
-Layer           Module                  Responsibility
-──────────────────────────────────────────────────────
-Auth            auth.py                 PAT → BasicAuth, mask helper
-HTTP            _http.py                Response parsing, error mapping
-Client          client.py               Single ClientSession, top-level API
-Retry           retry.py                Tenacity expo+jitter, TransientError only
-Query           query/_filter.py        Filter expression tree
-                query/_apply.py         Apply DSL (groupby + aggregate)
-                query/_serialize.py     Canonical query serialization (HR-9)
-                query/_batch.py         URL > 3000 → POST $batch
-                query/_builder.py       Fluent QueryBuilder
-Pagination      pagination.py           Async iterator over $skip/nextLink
-Entities        entities/               Pydantic frozen+strict models
-Exceptions      exceptions.py           Typed exception hierarchy
-```
+2. **Expiração curta**: defina expiração para **30 dias** (no máximo 90). Crie um lembrete na agenda para renovar antes de expirar.
 
-Detailed architecture: [`docs/architecture.md`](docs/architecture.md).
+3. **Nunca commitar**: o PAT nunca deve ser versionado no git. O arquivo `.env` já está no `.gitignore` do projeto — confirme antes de dar `git add`.
 
-## Project conventions
+4. **Roteação periódica**: a cada novo projeto ou ao final do estágio, revogue o token antigo e gere um novo. Siga a política de segurança da sua instituição.
 
-- **HARD RULES**: See [`AGENTS.md`](AGENTS.md) — 22 hard rules covering auth, retry, query serialization, type safety, and more.
-- **SDLC**: Every feature starts with a spec (`specs/NNN-slug.md`) approved by `/spec-check`, then test-first (RED), then implementation (GREEN).
-- **8 gotchas**: Azure DevOps Analytics OData has 8 critical gotchas documented in [`AGENTS.md`](AGENTS.md) — PAT auth, query option order, URL length, snapshot requirements, etc.
+5. **Compartilhamento zero**: não compartilhe seu PAT por e-mail, chat ou código. Se precisar compartilhar acesso, peça para a pessoa gerar o próprio token.
 
-## Development
+6. **Roteação (rotate)**: inclua a rotação do PAT no seu calendário — crie um lembrete recorrente. Bancos geralmente exigem rotação a cada 30-60 dias.
 
-```bash
-# Setup
-uv sync
+---
 
-# Test
-uv run pytest
+## Glossário rápido
 
-# Static analysis
-uv run ruff check .
-uv run mypy src/
+| Termo | Significado |
+|---|---|
+| **OData** | Open Data Protocol — protocolo REST para consulta de dados |
+| **PAT** | Personal Access Token — token de acesso pessoal para autenticação |
+| **ADO** | Azure DevOps — plataforma de desenvolvimento da Microsoft |
+| **WIP** | Work In Progress — trabalho em andamento |
+| **Cycle time** | Tempo entre o início e a conclusão de um work item |
+| **Throughput** | Quantidade de work items concluídos em um período |
+| **Pydantic** | Biblioteca Python para validação de dados com tipos |
 
-# Audit
-bash scripts/audit.sh
+Consulte o [glossário completo](docs/glossary.md) para todos os termos.
 
-# Coverage
-uv run pytest --cov=ado_odata_async --cov-fail-under=85
-```
+---
 
-## ADRs
+## Solução de problemas
 
-Architecture Decision Records in [`docs/decisions.md`](docs/decisions.md):
+| Situação | O que fazer |
+|---|---|
+| `401 Unauthorized` | Seu PAT expirou ou está com escopo insuficiente. Crie um novo. |
+| `HTTP 203 + HTML no body` | PAT inválido ou nome da organização errado. |
+| `ModuleNotFoundError` | Rodou `uv sync` sem a flag `--all-groups`? Tente com ela. |
+| `400 Bad Request` | Verifique a sintaxe do filtro. Faltou `as <alias>` no aggregate? |
+| URL muito longa | A biblioteca faz batch automático acima de 3000 caracteres (configurável). |
+| Não entendeu um termo | Consulte o [glossário](docs/glossary.md) — todas as siglas estão definidas lá. |
+| Ainda travado | Abra uma [issue no GitHub](https://github.com/ohmyopencode/odata-python-wrapper/issues). |
 
-| ADR | Decision |
-|-----|----------|
-| 001 | OData v4.0-preview default |
-| 002 | Auth error mapping (203+text/html → AuthenticationError) |
-| 003 | Retry strategy (tenacity expo+jitter, TransientError only) |
-| 004 | Pagination async iterator ($skip/$top + nextLink) |
-| 005 | Filter DSL (expression tree with escape) |
-| 006 | Pydantic frozen + strict + extra-forbid |
-| 007 | Query serialization order (HR-9) |
-| 008 | Batch POST for URLs > 3000 chars |
-| 009 | Notion MCP as canonical spec/ADR store |
-| 010 | Scaffolding via opencode |
-| 011 | Fluent API QueryBuilder |
+Veja [`docs/troubleshooting.md`](docs/troubleshooting.md) para diagnósticos detalhados.
+
+---
+
+## Licença
+
+MIT &copy; OhMyOpenCode
