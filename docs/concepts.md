@@ -200,6 +200,7 @@ graph LR
 # Exemplo conceitual — veja docs/cookbook.md para o código completo
 from datetime import datetime
 
+# ISO 8601: datas UTC vêm com sufixo "Z" — .replace("Z", "+00:00") torna-as legíveis pelo Python
 activated = datetime.fromisoformat(item["ActivatedDate"].replace("Z", "+00:00"))
 closed = datetime.fromisoformat(item["ClosedDate"].replace("Z", "+00:00"))
 cycle_time_days = (closed - activated).total_seconds() / 86400
