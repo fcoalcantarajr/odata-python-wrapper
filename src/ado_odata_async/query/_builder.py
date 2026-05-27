@@ -53,6 +53,18 @@ class QueryBuilder:
         """Return the current options dict for client.get/paginate."""
         return dict(self._options)
 
+    def _extract_groupby_fields(self, apply_value: str) -> list[str] | None:
+        """Extract groupby field list from $apply value, or None if not present.
+
+        Parses ``groupby((field1,field2,...))`` using strict regex.
+        Returns trimmed field list or None if pattern not matched.
+        """
+        import re
+        m = re.search(r"groupby\(\(([^)]+)\)\)", apply_value)
+        if m:
+            return [f.strip() for f in m.group(1).split(",")]
+        return None
+
     # ── string representations ──────────────────────────────
 
     def __str__(self) -> str:
@@ -74,20 +86,16 @@ class QueryBuilder:
         if value.startswith("$apply="):
             value = value[len("$apply=") :]
         # HR-13: Snapshot entity sets require groupby on DateSK / DateValue
-        # Parse exact tokens inside groupby((...)) — NOT substring match
         if self._entity_set in ("WorkItemSnapshot", "WorkItemBoardSnapshot"):
-            import re
-            m = re.search(r"groupby\(\(([^)]+)\)\)", value)
-            if m:
-                fields = [f.strip() for f in m.group(1).split(",")]
-                required = "DateSK" if self._entity_set == "WorkItemSnapshot" else "DateValue"
-                if required not in fields:
-                    raise ValueError(
-                        f"{self._entity_set} requires $apply with groupby(({required})) per HR-13"
-                    )
-            else:
+            fields = self._extract_groupby_fields(value)
+            if fields is None:
                 raise ValueError(
                     f"{self._entity_set} requires $apply with groupby((...)) per HR-13"
+                )
+            required = "DateSK" if self._entity_set == "WorkItemSnapshot" else "DateValue"
+            if required not in fields:
+                raise ValueError(
+                    f"{self._entity_set} requires $apply with groupby(({required})) per HR-13"
                 )
         b._options["$apply"] = value
         return b
@@ -148,9 +156,8 @@ class QueryBuilder:
             raise ValueError(
                 f"{self._entity_set} requires $apply with groupby(({required})) per HR-13"
             )
-        import re
-        m = re.search(r"groupby\(\(([^)]+)\)\)", apply_val)
-        if not m or required not in [f.strip() for f in m.group(1).split(",")]:
+        fields = self._extract_groupby_fields(apply_val)
+        if fields is None or required not in fields:
             raise ValueError(
                 f"{self._entity_set} requires $apply with groupby(({required})) per HR-13"
             )
