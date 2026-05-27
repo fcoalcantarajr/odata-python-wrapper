@@ -462,3 +462,15 @@ def test_f12_countdistinct_error_message() -> None:
     )
     assert "$count" in msg
     assert "sum/min/max/avg" in msg
+
+
+def test_f12_class_shortcut_with_alias_no_crash() -> None:
+    """Class shortcut Apply.aggregate('$count', alias='Count') must NOT crash."""
+    result = Apply.aggregate("$count", alias="Count").build()
+    assert result == "$apply=aggregate($count as Count)"
+
+
+def test_f12_class_shortcut_single_arg_raises_value_error() -> None:
+    """Class shortcut Apply.aggregate('field') with single arg raises ValueError."""
+    with pytest.raises(ValueError, match="requires a method argument"):
+        Apply.aggregate("field")  # type: ignore[call-arg]  # reason: intentionally testing the guard

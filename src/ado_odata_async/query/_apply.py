@@ -147,7 +147,17 @@ class Apply:
         # Class-level shortcut: self is the first argument (field)
         instance = Apply()  # type: ignore[unreachable]  # reason: intentional dual-role — self is field at class level
         field = self
-        method = args[0]
+        if args:
+            method = args[0]
+        elif alias is not None:
+            method = alias
+        else:
+            msg = (
+                "aggregate() requires a method argument, "
+                "e.g. Apply.aggregate('field', 'sum') or "
+                "Apply.aggregate('$count', alias='Count')"
+            )
+            raise ValueError(msg)
         if method == "countdistinct":
             msg = (
                 "countdistinct is not supported by ADO Analytics. "
