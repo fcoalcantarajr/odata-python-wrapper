@@ -85,7 +85,7 @@ result = await (
         Apply()
         .filter(Filter.eq("State", "Active"))
         .groupby("DateSK", "State")
-        .aggregate("Count", "WorkItemId")
+        .aggregate("WorkItemId", "countdistinct")
     )
     .top(10)
     .get()

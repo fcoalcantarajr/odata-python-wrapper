@@ -5,8 +5,8 @@ expressions with ``groupby``, ``filter``, and ``aggregate`` support::
 
     >>> Apply.groupby("State").build()
     "$apply=groupby((State))"
-    >>> Apply.groupby(["State","Priority"]).aggregate("Count","sum").build()
-    "$apply=groupby((State,Priority))/aggregate(Count with sum as Count)"
+    >>> Apply.groupby(["State","Priority"]).aggregate("Effort","sum").build()
+    "$apply=groupby((State,Priority))/aggregate(Effort with sum as Effort)"
     >>> Apply.filter(Filter.eq("State","Active")).build()
     "$apply=filter(State eq 'Active')"
 """
@@ -143,7 +143,7 @@ class Apply:
         -------
         str
             The full ``$apply=...`` query string, e.g.
-            ``"$apply=groupby((State))/aggregate(Count with sum)"``.
+            ``"$apply=groupby((State))/aggregate(Effort with sum as Effort)"``.
         """
         parts: list[str] = []
 

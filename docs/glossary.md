@@ -8,7 +8,7 @@
 
 **Definição**: Parâmetro OData usado para agrupar e agregar dados (como GROUP BY do SQL). É **obrigatório** para consultar `WorkItemSnapshot`.
 
-**Exemplo**: `$apply=groupby((DateSK,State))/aggregate(Count with WorkItemId as Count)`
+**Exemplo**: `$apply=groupby((DateSK,State))/aggregate(WorkItemId with countdistinct as WorkItemId)`
 
 **Veja também**: [WorkItemSnapshot](#workitemsnapshot), [Cookbook receita 8](cookbook.md#8-usar-apply-dsl-com-aggregate)
 

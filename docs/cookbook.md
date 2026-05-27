@@ -432,7 +432,7 @@ asyncio.run(main())
 
 **Quando você precisa**: consultar `WorkItemSnapshot` ou fazer agregações (contagens, somas agrupadas).
 
-> ⚠️ **Importante**: o Azure DevOps Analytics exige a cláusula `as <alias>` no aggregate. Sem o alias (ex.: `aggregate(Count with WorkItemId as Count)`), o servidor retorna `400 Bad Request`. Esta biblioteca sempre gera o alias automaticamente.
+> ⚠️ **Importante**: o Azure DevOps Analytics exige a cláusula `as <alias>` no aggregate. Sem o alias (ex.: `aggregate(WorkItemId with countdistinct as WorkItemId)`), o servidor retorna `400 Bad Request`. Esta biblioteca sempre gera o alias automaticamente.
 
 ```python
 """Receita 8: aplicar $apply com groupby e aggregate."""
@@ -460,14 +460,14 @@ async def main() -> None:
                 Apply()
                 .filter(Filter.eq("StateCategory", "Completed"))
                 .groupby("DateSK", "State")
-                .aggregate("Count", "WorkItemId")
+                .aggregate("WorkItemId", "countdistinct")
             )
             .top(10)
             .get()
         )
 
     for row in result.get("value", []):
-        print(f"Data: {row['DateSK']}  Estado: {row['State']:15s}  Qtd: {row.get('Count', 'N/A')}")
+        print(f"Data: {row['DateSK']}  Estado: {row['State']:15s}  Qtd: {row.get('WorkItemId', 'N/A')}")
 
 
 asyncio.run(main())
@@ -480,7 +480,7 @@ Data: 2025-05-01  Estado: Done           Qtd: 5
 Data: 2025-05-02  Estado: Concluído      Qtd: 8
 ```
 
-**Como funciona**: O `Apply` monta a expressão `$apply=groupby((DateSK,State))/aggregate(Count with WorkItemId as Count)`. O método `.groupby()` define os campos de agrupamento. O `.aggregate("Count", "WorkItemId")` diz "conte quantos WorkItemId existem em cada grupo". O alias é gerado automaticamente (mesmo nome do campo + método).
+**Como funciona**: O `Apply` monta a expressão `$apply=groupby((DateSK,State))/aggregate(WorkItemId with countdistinct as WorkItemId)`. O método `.groupby()` define os campos de agrupamento. O `.aggregate("WorkItemId", "countdistinct")` diz "conte quantos WorkItemId existem em cada grupo". O alias é gerado automaticamente (mesmo nome do campo de origem).
 
 ### Entendendo a saída
 
@@ -490,11 +490,51 @@ Cada linha representa uma combinação de data × estado. `DateSK` é a chave da
 
 ```python
 # Soma de esforço (se seu projeto preencher Effort)
-Apply().groupby("WorkItemType").aggregate("Sum", "Effort")
+Apply().groupby("WorkItemType").aggregate("Effort", "sum")
 
 # Média de tamanho por tipo
-Apply().groupby("WorkItemType").aggregate("Average", "StoryPoints")
+Apply().groupby("WorkItemType").aggregate("StoryPoints", "average")
 
 # Contagem de bugs por severidade
-Apply().groupby("State", "Priority").aggregate("CountDistinct", "WorkItemId")
+Apply().groupby("State", "Priority").aggregate("WorkItemId", "countdistinct")
 ```
+
+---
+
+## Erros comuns
+
+### 1. Ordem invertida no aggregate
+
+```python
+# ❌ ERRADO: método na posição do campo
+Apply().groupby("State").aggregate("Sum", "Effort")
+
+# ✅ CORRETO: campo primeiro, método em segundo (minúsculas)
+Apply().groupby("State").aggregate("Effort", "sum")
+```
+
+O método `aggregate(field, method)`) segue a ordem canônica do OData: campo/propriedade primeiro, método de agregação depois. Métodos válidos: `sum`, `min`, `max`, `average`, `countdistinct` (sempre minúsculas).
+
+### 2. Usar `State` em vez de `StateCategory` em filtros
+
+```python
+# ❌ ERRADO: State retorna nomes localizados (depende do idioma do projeto)
+filter_expr = Filter.eq("State", "Concluído")
+
+# ✅ CORRETO: StateCategory funciona em qualquer idioma
+filter_expr = Filter.eq("StateCategory", "Completed")
+```
+
+### 3. Confundir `$filter` com `Apply.filter()`
+
+```python
+# ❌ ERRADO: aplicar filtro no QueryBuilder quando deveria ser no Apply
+client.query("WorkItemSnapshot").filter(...)  # gera $filter na URL — rejeitado pelo serviço
+
+# ✅ CORRETO: use Apply.filter() dentro da expressão $apply
+client.query("WorkItemSnapshot").apply(
+    Apply().filter(Filter.eq("StateCategory", "Completed"))
+)
+```
+
+O `QueryBuilder.filter()` gera `$filter` na URL. O `Apply.filter()` gera `filter(...)` dentro de `$apply`. Misturar os dois gera resultados inesperados — `$filter` é aplicado antes da agregação, `$apply/filter` depois.

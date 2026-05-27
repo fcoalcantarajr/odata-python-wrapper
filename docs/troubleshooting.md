@@ -76,7 +76,7 @@ client.query("WorkItemSnapshot").apply(
     Apply()
     .filter(Filter.eq("State", "Active"))
     .groupby("DateSK", "State")
-    .aggregate("Count", "WorkItemId")
+    .aggregate("WorkItemId", "countdistinct")
 ).top(10).get()
 ```
 
@@ -95,13 +95,44 @@ ado_odata_async.exceptions.BadRequestError: 400 Bad Request
 **Causa**: O Azure DevOps Analytics exige que cada aggregate tenha um alias com `as <nome>`. Exemplo:
 ```
 # ✅ Correto (a biblioteca gera automaticamente)
-aggregate(Count with WorkItemId as Count)
+aggregate(WorkItemId with countdistinct as WorkItemId)
 
 # ❌ Errado (o serviço rejeita)
-aggregate(Count with WorkItemId)
+aggregate(WorkItemId with countdistinct)
 ```
 
 **O que fazer**: Se você está montando a query manualmente (sem o `Apply` builder), inclua o `as <alias>`. Se está usando o `Apply` builder, ele já gera o alias automaticamente — nenhuma ação necessária.
+
+---
+
+## 400 Bad Request com aggregate — ordem dos argumentos
+
+**O que você vê**:
+```
+ado_odata_async.exceptions.BadRequestError: 400 Bad Request
+```
+(quando usa `aggregate` com os argumentos trocados)
+
+**Causa**: O método `aggregate(field, method)` espera o **campo/propriedade** primeiro e o **método de agregação** em segundo. A ordem canônica do OData é `$apply=aggregate(field with method as field)`. Trocar os argumentos gera uma expressão inválida, como `aggregate(Count with WorkItemId as Count)` em vez de `aggregate(WorkItemId with countdistinct as WorkItemId)`.
+
+Além disso, o nome do método deve estar em **minúsculas**. Os métodos válidos no Azure DevOps Analytics v4.0-preview são:
+- `sum` — soma dos valores
+- `min` — valor mínimo
+- `max` — valor máximo
+- `average` — média aritmética
+- `countdistinct` — contagem distinta de valores
+
+**O que fazer**: Verifique a ordem da chamada:
+```python
+# ❌ ERRADO: método na posição do campo, campo na posição do método
+Apply().groupby("State").aggregate("Sum", "Effort")
+
+# ✅ CORRETO: campo primeiro, método em segundo (minúsculas)
+Apply().groupby("State").aggregate("Effort", "sum")
+Apply().groupby("State").aggregate("WorkItemId", "countdistinct")
+```
+
+**Como prevenir**: Sempre escreva `aggregate("<campo>", "<método>")` — o campo é o dado que você quer agregar (ex.: `Effort`, `WorkItemId`, `StoryPoints`), o método é a operação (`sum`, `average`, `countdistinct`, `min`, `max`).
 
 ---
 
