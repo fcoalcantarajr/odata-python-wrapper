@@ -10,9 +10,9 @@ Each test maps to one AC from specs/006-apply-dsl.md:
   - AC-1: groupby single field          → "$apply=groupby((State))"
   - AC-2: groupby multiple fields        → "$apply=groupby((State,Priority))"
   - AC-3: filter wrapping                → "$apply=filter(State eq 'Active')"
-  - AC-4: aggregate method               → "$apply=aggregate(Effort with sum)"
+   - AC-4: aggregate method               → "$apply=aggregate(Effort with sum as Effort)"
   - AC-5: groupby then aggregate         → "$apply=groupby((...))/aggregate(...)"
-  - AC-6: multiple aggregations          → contains "aggregate(Count with sum, Effort with average)"
+   - AC-6: multiple aggregations          → contains "aggregate(Count with sum as Count,"
   - AC-7: WorkItemSnapshot no groupby    → ValueError with "WorkItemSnapshot" and "groupby(DateSK)"
   - AC-8: WorkItemBoardSnapshot w/groupby  → validate() returns None
 """
@@ -69,7 +69,7 @@ def test_ac4_aggregate_method() -> None:
     """AC-4: aggregate with field name and method function.
 
     Apply.aggregate("Effort", "sum").build()
-      → "$apply=aggregate(Effort with sum)"
+      → "$apply=aggregate(Effort with sum as Effort)"
 
     Asserts:
       - build() returns "$apply=aggregate(Effort with sum as Effort)"
@@ -83,7 +83,7 @@ def test_ac5_groupby_then_aggregate() -> None:
     """AC-5: groupby composed with aggregate (fluent chain).
 
     Apply.groupby(["TeamProject","WorkItemType"]).aggregate("Count","sum").build()
-      → "$apply=groupby((TeamProject,WorkItemType))/aggregate(Count with sum)"
+      → "$apply=groupby((TeamProject,WorkItemType))/aggregate(Count with sum as Count)"
 
     Asserts:
       - build() returns the full composed $apply string

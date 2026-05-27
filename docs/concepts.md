@@ -74,7 +74,7 @@ result = await (
 
 **Quando usar**: para calcular métricas de fluxo ao longo do tempo (cycle time, WIP histórico).
 
-> **REGRRA**: WorkItemSnapshot **requer** `$apply` com `groupby((DateSK, ...))`. Um `$filter` simples não funciona — o serviço retorna `400 Bad Request`.
+> **REGRA**: WorkItemSnapshot **requer** `$apply` com `groupby((DateSK, ...))`. Um `$filter` simples não funciona — o serviço retorna `400 Bad Request`.
 
 ```python
 from ado_odata_async.query import Apply
