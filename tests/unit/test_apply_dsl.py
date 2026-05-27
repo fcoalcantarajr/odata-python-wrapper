@@ -224,7 +224,7 @@ def test_instance_filter_chaining() -> None:
     assert result is apply_obj
     result2 = result.groupby("State")
     assert result2 is apply_obj
-    assert "$apply=groupby((State))/filter(State eq 'Active')" in result2.build()
+    assert "$apply=filter(State eq 'Active')/groupby((State))" in result2.build()
 
 
 def test_groupby_with_tuple() -> None:
@@ -240,13 +240,13 @@ def test_empty_apply() -> None:
 
 
 def test_filter_then_groupby() -> None:
-    """Filter then groupby (order reversed in build).
+    """Filter then groupby preserves declaration order.
 
-    Per OData spec, order should be: filter, then groupby.
-    But our current impl has groupby before filter. Check the ordering.
+    Per OData spec, order should match method call order: groupby
+    is called first, then filter.
 
     Asserts:
-      - build() respects HR-9 order (groupby first, then filter)
+      - build() preserves declaration order (groupby, then filter)
     """
     f = Filter.eq("Priority", "High")
     result = Apply.groupby("State").filter(f).build()
@@ -255,3 +255,105 @@ def test_filter_then_groupby() -> None:
     parts = result.split("/")
     assert parts[0].startswith("$apply=groupby")
     assert "filter" in result
+
+
+# -----------------------------------------------------------------------
+# F10: declaration-order preservation in $apply pipeline
+# -----------------------------------------------------------------------
+
+
+def test_f10_filter_groupby_aggregate_order() -> None:
+    """F10 exact case: Apply().filter(...).groupby(...).aggregate(...)
+    emits filter→groupby→aggregate in declaration order.
+
+    This is the regression test for F10 — the pipeline MUST preserve the
+    order in which the user chained the methods, not a hardcoded order.
+    """
+    result = (
+        Apply()
+        .filter(Filter.eq("StateCategory", "Completed"))
+        .groupby("DateSK", "State")
+        .aggregate("WorkItemId", "countdistinct")
+        .build()
+    )
+    assert result == (
+        "$apply=filter(StateCategory eq 'Completed')"
+        "/groupby((DateSK,State))"
+        "/aggregate(WorkItemId with countdistinct as WorkItemId)"
+    )
+
+
+def test_f10_all_6_permutations() -> None:
+    """All 6 permutations of filter/groupby/aggregate preserve order."""
+    f1 = Filter.eq("A", "1")
+    f2 = Filter.gt("B", "2")
+
+    # Permutation 1: filter → groupby → aggregate
+    r = Apply().filter(f1).groupby("X").aggregate("Y", "sum").build()
+    assert r.index("filter") < r.index("groupby") < r.index("aggregate")
+
+    # Permutation 2: filter → aggregate → groupby
+    r = Apply().filter(f1).aggregate("Y", "sum").groupby("X").build()
+    assert r.index("filter") < r.index("aggregate") < r.index("groupby")
+
+    # Permutation 3: groupby → filter → aggregate
+    r = Apply().groupby("X").filter(f1).aggregate("Y", "sum").build()
+    assert r.index("groupby") < r.index("filter") < r.index("aggregate")
+
+    # Permutation 4: groupby → aggregate → filter
+    r = Apply().groupby("X").aggregate("Y", "sum").filter(f1).build()
+    assert r.index("groupby") < r.index("aggregate") < r.index("filter")
+
+    # Permutation 5: aggregate → filter → groupby
+    r = Apply().aggregate("Y", "sum").filter(f1).groupby("X").build()
+    assert r.index("aggregate") < r.index("filter") < r.index("groupby")
+
+    # Permutation 6: aggregate → groupby → filter
+    r = Apply().aggregate("Y", "sum").groupby("X").filter(f1).build()
+    assert r.index("aggregate") < r.index("groupby") < r.index("filter")
+
+    # Permutation 6b: all three with filter+filter
+    r = Apply().filter(f1).groupby("X").filter(f2).aggregate("Y", "sum").build()
+    assert r.index("filter(A") < r.index("groupby") < r.index("filter(B") < r.index("aggregate")
+
+
+def test_f10_consecutive_aggregate_coalesce() -> None:
+    """Consecutive .aggregate().aggregate() coalesce into one clause."""
+    result = (
+        Apply()
+        .groupby("State")
+        .aggregate("Count", "sum")
+        .aggregate("Effort", "average")
+        .build()
+    )
+    # Single aggregate clause with both metrics
+    assert result == (
+        "$apply=groupby((State))"
+        "/aggregate(Count with sum as Count, Effort with average as Effort)"
+    )
+
+
+def test_f10_non_consecutive_aggregate_two_clauses() -> None:
+    """Non-consecutive aggregate does NOT coalesce — two separate clauses."""
+    result = (
+        Apply()
+        .aggregate("Count", "sum")
+        .groupby("State")
+        .aggregate("Effort", "average")
+        .build()
+    )
+    # Two separate aggregate clauses
+    assert "aggregate(Count with sum as Count)" in result
+    assert "aggregate(Effort with average as Effort)" in result
+    # groupby between them
+    cnt_idx = result.index("aggregate(Count")
+    gb_idx = result.index("groupby")
+    efr_idx = result.index("aggregate(Effort")
+    assert cnt_idx < gb_idx < efr_idx
+
+
+def test_f10_hr13_still_enforced() -> None:
+    """HR-13 still raises on WorkItemSnapshot without DateSK after refactor."""
+    apply_obj = Apply(entity_type="WorkItemSnapshot").aggregate("Count", "sum")
+    with pytest.raises(ValueError, match=r"WorkItemSnapshot.*groupby\(DateSK\)"):
+        apply_obj.validate()

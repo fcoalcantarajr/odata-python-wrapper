@@ -13,6 +13,8 @@ expressions with ``groupby``, ``filter``, and ``aggregate`` support::
 
 from __future__ import annotations
 
+from typing import Any
+
 from ado_odata_async.query._filter import Filter
 
 
@@ -38,12 +40,10 @@ class Apply:
         present (gotcha 4 / HR-13).
     """
 
-    __slots__ = ("_aggregations", "_entity_type", "_filter_expr", "_groupby_fields")
+    __slots__ = ("_entity_type", "_operations")
 
     def __init__(self, entity_type: str | None = None) -> None:
-        self._groupby_fields: list[str] = []
-        self._filter_expr: Filter | None = None
-        self._aggregations: list[tuple[str, str]] = []
+        self._operations: list[tuple[str, Any]] = []
         self._entity_type = entity_type
 
     # ------------------------------------------------------------------
@@ -65,19 +65,24 @@ class Apply:
         """
         if isinstance(self, Apply):
             # Instance path: args contains all positional arguments
+            fields: list[str]
             if len(args) == 1 and isinstance(args[0], list | tuple):
-                # Single list/tuple argument
-                self._groupby_fields = list(args[0])
+                fields = list(args[0])
             else:
-                # Multiple string arguments
-                self._groupby_fields = [arg for arg in args if isinstance(arg, str)]
+                fields = [arg for arg in args if isinstance(arg, str)]
+            # Replace existing groupby if present (groupby is idempotent)
+            for i, (op_name, _) in enumerate(self._operations):
+                if op_name == "groupby":
+                    self._operations[i] = ("groupby", fields)
+                    return self
+            self._operations.append(("groupby", fields))
             return self
         # Class-level shortcut: self is the first argument (fields)
         instance = Apply()  # type: ignore[unreachable]  # reason: intentional dual-role — self is fields at class level
         if isinstance(self, str):
-            instance._groupby_fields = [self]
+            instance._operations.append(("groupby", [self]))
         else:
-            instance._groupby_fields = list(self)
+            instance._operations.append(("groupby", list(self)))
         return instance
 
     def filter(self, /, *args: Filter) -> Apply:
@@ -87,10 +92,10 @@ class Apply:
         ``instance.filter(expr)`` — mutates and returns self.
         """
         if isinstance(self, Apply):
-            self._filter_expr = args[0]
+            self._operations.append(("filter", args[0]))
             return self
         instance = Apply()  # type: ignore[unreachable]  # reason: intentional dual-role — self is filter_expr at class level
-        instance._filter_expr = self
+        instance._operations.append(("filter", self))
         return instance
 
     def aggregate(self, /, *args: str) -> Apply:
@@ -103,10 +108,15 @@ class Apply:
         if isinstance(self, Apply):
             field = args[0]
             method = args[1]
-            self._aggregations.append((field, method))
+            # Coalesce with previous aggregate if present
+            if self._operations and self._operations[-1][0] == "aggregate":
+                agg_list: list[tuple[str, str]] = self._operations[-1][1]
+                agg_list.append((field, method))
+            else:
+                self._operations.append(("aggregate", [(field, method)]))
             return self
         instance = Apply()  # type: ignore[unreachable]  # reason: intentional dual-role — self is field at class level
-        instance._aggregations.append((self, args[0]))
+        instance._operations.append(("aggregate", [(self, args[0])]))
         return instance
 
     # ------------------------------------------------------------------
@@ -124,11 +134,17 @@ class Apply:
             is ``"WorkItemBoardSnapshot"`` and no
             ``groupby(DateValue)`` is present (HR-13 / gotcha 4).
         """
-        if self._entity_type == "WorkItemSnapshot" and "DateSK" not in self._groupby_fields:
+        groupby_fields: list[str] = []
+        for op_name, payload in self._operations:
+            if op_name == "groupby":
+                groupby_fields = payload
+                break
+
+        if self._entity_type == "WorkItemSnapshot" and "DateSK" not in groupby_fields:
             msg = f"{self._entity_type} requires groupby(DateSK)"
             raise ValueError(msg)
 
-        if self._entity_type == "WorkItemBoardSnapshot" and "DateValue" not in self._groupby_fields:
+        if self._entity_type == "WorkItemBoardSnapshot" and "DateValue" not in groupby_fields:
             msg = f"{self._entity_type} requires groupby(DateValue)"
             raise ValueError(msg)
 
@@ -144,21 +160,24 @@ class Apply:
         str
             The full ``$apply=...`` query string, e.g.
             ``"$apply=groupby((State))/aggregate(Effort with sum as Effort)"``.
+
+        The pipeline preserves the declaration order of method calls:
+        ``filter()`` then ``groupby()`` then ``aggregate()`` produces
+        ``$apply=filter(...)/groupby(...)/aggregate(...)``.
         """
         parts: list[str] = []
 
-        if self._groupby_fields:
-            inner = ",".join(self._groupby_fields)
-            parts.append(f"groupby(({inner}))")
-
-        if self._filter_expr is not None:
-            parts.append(f"filter({self._filter_expr.build()})")
-
-        if self._aggregations:
-            agg_parts = [
-                f"{field} with {method} as {field}" for field, method in self._aggregations
-            ]
-            parts.append(f"aggregate({', '.join(agg_parts)})")
+        for op_name, payload in self._operations:
+            if op_name == "groupby":
+                inner = ",".join(payload)
+                parts.append(f"groupby(({inner}))")
+            elif op_name == "filter":
+                parts.append(f"filter({payload.build()})")
+            elif op_name == "aggregate":
+                agg_parts = [
+                    f"{field} with {method} as {field}" for field, method in payload
+                ]
+                parts.append(f"aggregate({', '.join(agg_parts)})")
 
         return f"$apply={'/'.join(parts)}"
 

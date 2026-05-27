@@ -213,3 +213,24 @@ NameError: name 'asyncio' is not defined
 uv run pytest
 ```
 (Não use `pytest` diretamente — sempre use `uv run pytest` dentro do projeto.)
+
+---
+
+## VS403483 em WorkItemSnapshot com countdistinct (F11 candidate)
+
+**O que você vê**:
+```
+VS403483: $apply/groupby grouping expression 'WorkItemId' must evaluate to a property access value.
+```
+
+**Causa**: Em algumas organizações/projetos do Azure DevOps, usar `countdistinct` em `WorkItemId` dentro de um `$apply/groupby` sem filtro prévio é rejeitado. O serviço exige que a expressão de agrupamento seja uma propriedade acessível (não uma agregação), e `WorkItemId` pode não ser uma coluna projetada no escopo do `WorkItemSnapshot` sem um `filter(...)` antes do `groupby(...)`.
+
+**Contorno**: Adicione um `Apply.filter(...)` antes do `groupby(...)` para garantir que as colunas estejam projetadas:
+```python
+Apply()
+    .filter(Filter.eq("StateCategory", "Completed"))
+    .groupby("DateSK", "State")
+    .aggregate("WorkItemId", "countdistinct")
+```
+
+**Status**: Investigação em andamento — pode ser uma configuração específica da organização ou uma limitação do serviço OData v4.0-preview.
