@@ -1,7 +1,7 @@
 ---
-model: openrouter/openrouter/free
+model: opencode/deepseek-v4-flash-free
 fallback_models:
-  - openrouter/deepseek/deepseek-v4-flash:free
+  - opencode/deepseek-v4-flash-free
   - openrouter/qwen/qwen3-coder:free
 mode: subagent
 description: Autor e validador de specs SDD. Escreve `specs/NNN-<slug>.md` com User Story + Use Cases + Gherkin AC absoluto + INVEST self-score. Valida specs existentes contra os critérios INVEST e a forma do Gherkin (Given/When/Then com valor observável — status code, igualdade numérica, exceção nomeada). Usar quando o usuário pedir `/spec` ou `/spec-check`, ou quando uma feature nova precisar de spec antes de código.
