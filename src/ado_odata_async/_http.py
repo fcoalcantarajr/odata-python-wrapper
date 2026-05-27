@@ -54,8 +54,16 @@ async def parse_response(resp: aiohttp.ClientResponse) -> dict[str, Any]:
         raise BadRequestError(msg)
 
     if resp.status == 429:
-        retry_after = resp.headers.get("Retry-After", "unknown")
-        raise RateLimitError(f"HTTP 429: Rate limit. Retry-After: {retry_after}s")
+        raw = resp.headers.get("Retry-After", "0")
+        try:
+            retry_after = float(raw)
+        except ValueError:
+            logger.debug("Retry-After header malformed or non-numeric: %r, using None", raw)
+            retry_after = None
+        raise RateLimitError(
+            f"HTTP 429: Rate limit. Retry-After: {raw}s",
+            retry_after=retry_after,
+        )
 
     if 500 <= resp.status < 600:
         raise TransientError(f"HTTP {resp.status}: Erro transitório do servidor")

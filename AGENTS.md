@@ -72,6 +72,15 @@ Nenhum passo é pulado. TEST_RED VEM ANTES DO IMPL_GREEN. SEMPRE.
 
 ---
 
+## Audit.sh Enforcement Notes
+
+**HR-13 (WorkItemSnapshot groupby)**:  
+HR-13 validation is enforced **by code** (`_check_snapshot_groupby()` in `src/ado_odata_async/query/_apply.py`), not by `audit.sh`. This is intentional: detecting Snapshot violations requires semantic analysis of the query AST, which is impractical for a bash regex audit. The code-level enforcement is **sufficient and robust**; violations will fail at runtime with a descriptive error message.
+
+**Other code-only HRs** (HR-9, HR-11, HR-12, HR-16, HR-19): Enforced at code level; `audit.sh` is a first-line gate for easy-to-catch patterns, not exhaustive OData domain validation.
+
+---
+
 ## File ownership
 
 | Path                    | Quem escreve                              | Quem NÃO escreve                |
