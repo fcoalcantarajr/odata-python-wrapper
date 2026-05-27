@@ -7,11 +7,11 @@ from typing import Any
 async def fetch_metadata(client: Any) -> dict[str, Any]:
     """Fetch OData $metadata and cache parsed CSDL.
 
-    **Status**: Intentionally deferred (not in scope for Specs 001–012).
+    **Status**: Intentionally deferred (not in scope for Specs 001-012).
     **Rationale**: Entity validation via CSDL parsing requires:
     - CSDL XML parser (ElementTree) and schema traversal logic
-    - Client-side type coercion (string→int, ISO8601→datetime, etc.)
-    - Heavy test matrix (each entity × CSDL version combinations)
+    - Client-side type coercion (string->int, ISO8601->datetime, etc.)
+    - Heavy test matrix (each entity x CSDL version combinations)
     - Currently, Pydantic `model_validate()` (strict mode) + type hints suffice.
 
     **Future Path**: Implement via separate Spec-013 if:
