@@ -62,3 +62,4 @@ session-ses_*.md
 *.backup-*
 *.orig
 *~
+docs/_scratch/

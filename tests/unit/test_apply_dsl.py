@@ -1,20 +1,8 @@
-"""RED-phase tests for SPEC-006 $apply DSL builder — fluent builder for OData aggregations.
+"""Tests for $apply DSL builder (Apply class) — fluent builder for OData aggregations.
 
-All 8 tests MUST fail (RED) because `ado_odata_async.query._apply.Apply`
-does not exist yet. The import itself will raise `ImportError`.
-
-No async, no aiohttp, no fixtures needed — these are pure sync string
-assertions against `Apply.build()` / `str(Apply)`.
-
-Each test maps to one AC from specs/006-apply-dsl.md:
-  - AC-1: groupby single field          → "$apply=groupby((State))"
-  - AC-2: groupby multiple fields        → "$apply=groupby((State,Priority))"
-  - AC-3: filter wrapping                → "$apply=filter(State eq 'Active')"
-   - AC-4: aggregate method               → "$apply=aggregate(Effort with sum as Effort)"
-  - AC-5: groupby then aggregate         → "$apply=groupby((...))/aggregate(...)"
-   - AC-6: multiple aggregations          → contains "aggregate(Count with sum as Count,"
-  - AC-7: WorkItemSnapshot no groupby    → ValueError with "WorkItemSnapshot" and "groupby(DateSK)"
-  - AC-8: WorkItemBoardSnapshot w/groupby  → validate() returns None
+Covers SPEC-006 ($apply DSL), F10 ($apply operator order preservation),
+F11 (countdistinct guard + nested groupby/aggregate), and F12 (class shortcut
+alias handling). All tests are GREEN.
 """
 
 from __future__ import annotations
