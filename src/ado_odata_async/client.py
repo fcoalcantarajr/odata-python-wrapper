@@ -85,7 +85,10 @@ class AdoODataClient:
 
     @with_retry
     async def get(self, entity_set: str, **params: str) -> dict[str, Any]:
-        assert self._session is not None
+        if self._session is None:
+            raise RuntimeError(
+                "client session is closed — .get() must be called within 'async with' context"
+            )
         query_str = serialize(params) if params else ""
         url_str = f"{self._service_root}/{entity_set}"
         if query_str:

@@ -39,7 +39,10 @@ async def iter_pages(
     while True:
         if next_link_url:
             # Follow @odata.nextLink; parse_response maps errors to typed exceptions.
-            async with client._session.get(next_link_url) as resp:  # type: ignore[union-attr]  # reason: session exists during iteration (guarded by self._fetched)
+            if client._session is None:
+                msg = "client session is closed — pagination must complete within context"
+                raise RuntimeError(msg)
+            async with client._session.get(next_link_url) as resp:
                 data = await parse_response(resp)
         else:
             # Build query params in canonical OData order (HR-9):
