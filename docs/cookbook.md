@@ -450,7 +450,7 @@ asyncio.run(main())
 
 **Quando você precisa**: consultar `WorkItemSnapshot` ou fazer agregações (contagens, somas agrupadas).
 
-> ⚠️ **Importante**: o Azure DevOps Analytics exige a cláusula `as <alias>` no aggregate. Sem o alias (ex.: `aggregate(WorkItemId with countdistinct)`) — repare que a cláusula `as WorkItemId` é obrigatória mas gerada automaticamente, o servidor retorna `400 Bad Request`. Esta biblioteca sempre gera o alias automaticamente.
+> ⚠️ **Importante**: o Azure DevOps Analytics exige a cláusula `as <alias>` no aggregate. Sem o alias (ex.: `aggregate($count as Count)`) — o servidor retorna `400 Bad Request`. Esta biblioteca sempre gera o alias automaticamente.
 
 ```python
 """Receita 8: aplicar $apply com groupby e aggregate."""
@@ -480,14 +480,14 @@ async def main() -> None:
                 Apply()
                 .filter(Filter.eq("StateCategory", "Completed"))
                 .groupby("DateSK", "State")
-                .aggregate("WorkItemId", "countdistinct")
+                .aggregate("$count", alias="Count")
             )
             .top(10)
             .get()
         )
 
     for row in result.get("value", []):
-        print(f"Data: {row['DateSK']}  Estado: {row['State']:15s}  Qtd: {row.get('WorkItemId', 'N/A')}")
+        print(f"Data: {row['DateSK']}  Estado: {row['State']:15s}  Qtd: {row.get('Count', 'N/A')}")
 
 
 asyncio.run(main())
@@ -500,7 +500,7 @@ Data: 2025-05-01  Estado: Done           Qtd: 5
 Data: 2025-05-02  Estado: Concluído      Qtd: 8
 ```
 
-**Como funciona**: O `Apply` monta a expressão `$apply=groupby((DateSK,State))/aggregate(WorkItemId with countdistinct as WorkItemId)`. O método `.groupby()` define os campos de agrupamento. O `.aggregate("WorkItemId", "countdistinct")` diz "conte quantos WorkItemId existem em cada grupo". O alias é gerado automaticamente (mesmo nome do campo de origem).
+**Como funciona**: O `Apply` monta a expressão `$apply=filter(...)/groupby((DateSK,State),aggregate($count as Count))`. O aggregate é **aninhado** dentro do groupby (sintaxe exigida pelo ADO Analytics). O `.aggregate("$count", alias="Count")` conta as linhas de cada grupo, e o alias `Count` nomeia a coluna de saída.
 
 ### Entendendo a saída
 
@@ -515,8 +515,8 @@ Apply().groupby("WorkItemType").aggregate("Effort", "sum")
 # Média de tamanho por tipo
 Apply().groupby("WorkItemType").aggregate("StoryPoints", "average")
 
-# Contagem de bugs por severidade
-Apply().groupby("State", "Priority").aggregate("WorkItemId", "countdistinct")
+# Contagem de bugs por severidade (use $count — countdistinct é bloqueado)
+Apply().groupby("State", "Priority").aggregate("$count", alias="Count")
 ```
 
 ---
@@ -533,7 +533,9 @@ Apply().groupby("State").aggregate("Sum", "Effort")
 Apply().groupby("State").aggregate("Effort", "sum")
 ```
 
-O método `aggregate(field, method)`) segue a ordem canônica do OData: campo/propriedade primeiro, método de agregação depois. Métodos válidos: `sum`, `min`, `max`, `average`, `countdistinct` (sempre minúsculas).
+O método `aggregate(field, method)`) segue a ordem canônica do OData: campo/propriedade primeiro, método de agregação depois. Métodos válidos: `sum`, `min`, `max`, `average` (sempre minúsculas). Para contagem de linhas, use o campo virtual `$count` com `.aggregate("$count", alias="Nome")`.
+
+> ⚠️ **`countdistinct` é bloqueado**: O Azure DevOps Analytics **não suporta** `countdistinct` (a operação existe no OData, mas o serviço ADO retorna erro). Use `$count` dentro de `groupby`, ou `sum`/`min`/`max`/`avg` em um campo numérico. [Documentação oficial](https://learn.microsoft.com/en-us/azure/devops/report/extend-analytics/odata-query-guidelines?view=azure-devops).
 
 ### 2. Usar `State` em vez de `StateCategory` em filtros
 

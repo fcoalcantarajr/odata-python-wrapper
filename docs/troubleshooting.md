@@ -72,12 +72,12 @@ client.query("WorkItemSnapshot").filter(Filter.eq("State", "Active")).get()
 # ✅ CORRETO: use $apply com groupby
 from ado_odata_async.query import Apply
 
-client.query("WorkItemSnapshot").apply(
-    Apply()
-    .filter(Filter.eq("State", "Active"))
-    .groupby("DateSK", "State")
-    .aggregate("WorkItemId", "countdistinct")
-).top(10).get()
+    client.query("WorkItemSnapshot").apply(
+        Apply()
+        .filter(Filter.eq("State", "Active"))
+        .groupby("DateSK", "State")
+        .aggregate("$count", alias="Count")
+    ).top(10).get()
 ```
 
 **Como prevenir**: A própria biblioteca valida isso! Se você esquecer o `groupby`, o `QueryBuilder` lança um `ValueError` antes de fazer a requisição.
@@ -95,10 +95,10 @@ ado_odata_async.exceptions.BadRequestError: 400 Bad Request
 **Causa**: O Azure DevOps Analytics exige que cada aggregate tenha um alias com `as <nome>`. Exemplo:
 ```
 # ✅ Correto (a biblioteca gera automaticamente)
-aggregate(WorkItemId with countdistinct as WorkItemId)
+aggregate(Effort with sum as Effort)
 
 # ❌ Errado (o serviço rejeita)
-aggregate(WorkItemId with countdistinct)
+aggregate(Effort with sum)
 ```
 
 **O que fazer**: Se você está montando a query manualmente (sem o `Apply` builder), inclua o `as <alias>`. Se está usando o `Apply` builder, ele já gera o alias automaticamente — nenhuma ação necessária.
@@ -113,14 +113,13 @@ ado_odata_async.exceptions.BadRequestError: 400 Bad Request
 ```
 (quando usa `aggregate` com os argumentos trocados)
 
-**Causa**: O método `aggregate(field, method)` espera o **campo/propriedade** primeiro e o **método de agregação** em segundo. A ordem canônica do OData é `$apply=aggregate(field with method as field)`. Trocar os argumentos gera uma expressão inválida, como `aggregate(Count with WorkItemId as Count)` em vez de `aggregate(WorkItemId with countdistinct as WorkItemId)`.
+**Causa**: O método `aggregate(field, method)` espera o **campo/propriedade** primeiro e o **método de agregação** em segundo. A ordem canônica do OData é `$apply=aggregate(field with method as field)`. Trocar os argumentos gera uma expressão inválida, como `aggregate(Count with WorkItemId as Count)` em vez de `aggregate(WorkItemId with sum as WorkItemId)`.
 
 Além disso, o nome do método deve estar em **minúsculas**. Os métodos válidos no Azure DevOps Analytics v4.0-preview são:
 - `sum` — soma dos valores
 - `min` — valor mínimo
 - `max` — valor máximo
 - `average` — média aritmética
-- `countdistinct` — contagem distinta de valores
 
 **O que fazer**: Verifique a ordem da chamada:
 ```python
@@ -129,11 +128,11 @@ Apply().groupby("State").aggregate("Count", "WorkItemId")   # "Count" vira méto
 Apply().groupby("State").aggregate("Sum", "Effort")
 
 # ✅ CORRETO: campo primeiro, método em segundo (minúsculas)
-Apply().groupby("State").aggregate("WorkItemId", "countdistinct")
+Apply().groupby("State").aggregate("WorkItemId", "sum")
 Apply().groupby("State").aggregate("Effort", "sum")
 ```
 
-**Como prevenir**: Sempre escreva `aggregate("<campo>", "<método>")` — o campo é o dado que você quer agregar (ex.: `Effort`, `WorkItemId`, `StoryPoints`), o método é a operação (`sum`, `average`, `countdistinct`, `min`, `max`).
+**Como prevenir**: Sempre escreva `aggregate("<campo>", "<método>")` — o campo é o dado que você quer agregar (ex.: `Effort`, `WorkItemId`, `StoryPoints`), o método é a operação (`sum`, `min`, `max`, `average`). Para contagem de linhas, use `aggregate("$count", alias="Nome")`.
 
 ---
 
@@ -216,21 +215,41 @@ uv run pytest
 
 ---
 
-## VS403483 em WorkItemSnapshot com countdistinct (F11 candidate)
+## VS403483 — groupby grouping expression must evaluate to a property access value
 
 **O que você vê**:
 ```
 VS403483: $apply/groupby grouping expression 'WorkItemId' must evaluate to a property access value.
 ```
+(HTTP 400 Bad Request)
 
-**Causa**: Em algumas organizações/projetos do Azure DevOps, usar `countdistinct` em `WorkItemId` dentro de um `$apply/groupby` sem filtro prévio é rejeitado. O serviço exige que a expressão de agrupamento seja uma propriedade acessível (não uma agregação), e `WorkItemId` pode não ser uma coluna projetada no escopo do `WorkItemSnapshot` sem um `filter(...)` antes do `groupby(...)`.
+**Causa**: Duas causas simultâneas, ambas corrigidas na F12:
 
-**Contorno**: Adicione um `Apply.filter(...)` antes do `groupby(...)` para garantir que as colunas estejam projetadas:
+1. **`countdistinct` é bloqueado pelo ADO Analytics.** A função `countdistinct` existe no OData, mas o Azure DevOps Analytics **não aceita**. A Microsoft afirma que suporte futuro está planejado, mas hoje o uso retorna erro.
+   - [Documentação: "DON'T use countdistinct aggregation"](https://learn.microsoft.com/en-us/azure/devops/report/extend-analytics/odata-query-guidelines?view=azure-devops)
+
+2. **`aggregate` deve ser ANINHADO dentro de `groupby`, não encadeado com `/`.** A sintaxe correta do OData é:
+   ```
+   groupby((State, DateValue), aggregate($count as Count, StoryPoints with sum as TotalStoryPoints))
+   ```
+   A forma incorreta `groupby((...))/aggregate(...)` gera o erro VS403483 porque, após o `groupby` standalone, apenas os campos de agrupamento estão no escopo — o campo do aggregate (ex.: `WorkItemId`) não é reconhecido.
+   - [Documentação: OData supported features](https://learn.microsoft.com/en-us/azure/devops/report/extend-analytics/odata-supported-features?view=azure-devops)
+
+**Solução** (a biblioteca já implementa desde a versão com F12):
+
 ```python
+# ✅ CORRETO: aggregate dentro de groupby, usando $count em vez de countdistinct
+from ado_odata_async.query import Apply, Filter
+
 Apply()
     .filter(Filter.eq("StateCategory", "Completed"))
     .groupby("DateSK", "State")
-    .aggregate("WorkItemId", "countdistinct")
+    .aggregate("$count", alias="Count")
+    .build()
+# → "$apply=filter(StateCategory eq 'Completed')/groupby((DateSK,State),aggregate($count as Count))"
 ```
 
-**Status**: Investigação em andamento — pode ser uma configuração específica da organização ou uma limitação do serviço OData v4.0-preview.
+**Como prevenir**:
+- Nunca use `countdistinct` como método de agregação — use `$count` com `alias` para contagem de linhas.
+- O aggregate é automaticamente aninhado dentro do groupby quando são consecutivos na chamada fluente.
+- Se precisar de contagem distinta, use `$count` dentro de `groupby` com os campos de desejados no agrupamento.

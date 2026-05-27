@@ -104,16 +104,39 @@ class Apply:
         instance._operations.append(("filter", self))
         return instance
 
-    def aggregate(self, /, *args: str) -> Apply:
+    def aggregate(self, /, *args: str, alias: str | None = None) -> Apply:
         """Add / create an aggregate clause.
 
         ``Apply.aggregate(field, method)``  — class shortcut, returns new
         Apply.  ``instance.aggregate(field, method)`` — mutates and
         returns self.
+
+        For virtual field ``$count`` the *method* is used as the output
+        alias (e.g. ``aggregate("$count", alias="Count")`` → ``$count as Count``).
+
+        Raises
+        ------
+        NotImplementedError
+            If *method* is ``"countdistinct"`` — this aggregator is
+            blocked by ADO Analytics.
         """
         if isinstance(self, Apply):
-            field = args[0]
-            method = args[1]
+            # Instance path: args contains all positional arguments
+            if len(args) == 1:
+                # $count with alias
+                field = args[0]
+                method = alias if alias is not None else field
+            else:
+                field = args[0]
+                method = args[1]
+
+            if method == "countdistinct":
+                msg = (
+                    "countdistinct is not supported by ADO Analytics. "
+                    "Use '$count' inside groupby, or sum/min/max/avg on a numeric field. "
+                    "See: https://learn.microsoft.com/en-us/azure/devops/report/extend-analytics/odata-query-guidelines?view=azure-devops"
+                )
+                raise NotImplementedError(msg)
             # Coalesce with previous aggregate if present
             if self._operations and self._operations[-1][0] == "aggregate":
                 agg_list: list[tuple[str, str]] = self._operations[-1][1]
@@ -121,8 +144,28 @@ class Apply:
             else:
                 self._operations.append(("aggregate", [(field, method)]))
             return self
+        # Class-level shortcut: self is the first argument (field)
         instance = Apply()  # type: ignore[unreachable]  # reason: intentional dual-role — self is field at class level
-        instance._operations.append(("aggregate", [(self, args[0])]))
+        field = self
+        if args:
+            method = args[0]
+        elif alias is not None:
+            method = alias
+        else:
+            msg = (
+                "aggregate() requires a method argument, "
+                "e.g. Apply.aggregate('field', 'sum') or "
+                "Apply.aggregate('$count', alias='Count')"
+            )
+            raise ValueError(msg)
+        if method == "countdistinct":
+            msg = (
+                "countdistinct is not supported by ADO Analytics. "
+                "Use '$count' inside groupby, or sum/min/max/avg on a numeric field. "
+                "See: https://learn.microsoft.com/en-us/azure/devops/report/extend-analytics/odata-query-guidelines?view=azure-devops"
+            )
+            raise NotImplementedError(msg)
+        instance._operations.append(("aggregate", [(field, method)]))
         return instance
 
     # ------------------------------------------------------------------
@@ -167,23 +210,45 @@ class Apply:
             The full ``$apply=...`` query string, e.g.
             ``"$apply=groupby((State))/aggregate(Effort with sum as Effort)"``.
 
-        The pipeline preserves the declaration order of method calls:
-        ``filter()`` then ``groupby()`` then ``aggregate()`` produces
-        ``$apply=filter(...)/groupby(...)/aggregate(...)``.
+        The pipeline preserves the declaration order of method calls.
+        When an ``aggregate`` immediately follows a ``groupby`` the two are
+        nested into a single clause::
+            ``groupby((...),aggregate(...))``
+
+        This matches the ADO Analytics syntax requirement (F12).
         """
         parts: list[str] = []
+        i = 0
+        while i < len(self._operations):
+            op_name, payload = self._operations[i]
 
-        for op_name, payload in self._operations:
             if op_name == "groupby":
                 inner = ",".join(payload)
-                parts.append(f"groupby(({inner}))")
+                # F12: nest aggregate inside groupby when consecutive
+                if i + 1 < len(self._operations) and self._operations[i + 1][0] == "aggregate":
+                    agg_payload = self._operations[i + 1][1]
+                    agg_parts = []
+                    for field, method in agg_payload:
+                        if field == "$count":
+                            agg_parts.append(f"$count as {method}")
+                        else:
+                            agg_parts.append(f"{field} with {method} as {field}")
+                    parts.append(f"groupby(({inner}),aggregate({', '.join(agg_parts)}))")
+                    i += 1  # Skip the consumed aggregate
+                else:
+                    parts.append(f"groupby(({inner}))")
             elif op_name == "filter":
                 parts.append(f"filter({payload.build()})")
             elif op_name == "aggregate":
-                agg_parts = [
-                    f"{field} with {method} as {field}" for field, method in payload
-                ]
+                agg_parts = []
+                for field, method in payload:
+                    if field == "$count":
+                        agg_parts.append(f"$count as {method}")
+                    else:
+                        agg_parts.append(f"{field} with {method} as {field}")
                 parts.append(f"aggregate({', '.join(agg_parts)})")
+
+            i += 1
 
         return f"$apply={'/'.join(parts)}"
 
