@@ -20,9 +20,9 @@ from dotenv import load_dotenv
 env_path = Path(".env")
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
-org = os.environ.get("ADO_ORG") or os.environ.get("AZURE_DEVOPS_ORG") or ""
-project = os.environ.get("ADO_PROJECT") or os.environ.get("AZURE_DEVOPS_PROJECT") or ""
-pat = os.environ.get("ADO_PAT") or os.environ.get("AZURE_DEVOPS_PAT") or ""
+org = os.environ.get("AZURE_DEVOPS_ORG") or ""
+project = os.environ.get("AZURE_DEVOPS_PROJECT") or ""
+pat = os.environ.get("AZURE_DEVOPS_PAT") or ""
 
 
 async def main() -> None:
@@ -73,9 +73,9 @@ from dotenv import load_dotenv
 env_path = Path(".env")
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
-org = os.environ.get("ADO_ORG") or ""
-project = os.environ.get("ADO_PROJECT") or ""
-pat = os.environ.get("ADO_PAT") or ""
+org = os.environ.get("AZURE_DEVOPS_ORG") or ""
+project = os.environ.get("AZURE_DEVOPS_PROJECT") or ""
+pat = os.environ.get("AZURE_DEVOPS_PAT") or ""
 
 dias_atras = (datetime.now(UTC) - timedelta(days=14)).isoformat()
 
@@ -126,9 +126,9 @@ from dotenv import load_dotenv
 env_path = Path(".env")
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
-org = os.environ.get("ADO_ORG") or ""
-project = os.environ.get("ADO_PROJECT") or ""
-pat = os.environ.get("ADO_PAT") or ""
+org = os.environ.get("AZURE_DEVOPS_ORG") or ""
+project = os.environ.get("AZURE_DEVOPS_PROJECT") or ""
+pat = os.environ.get("AZURE_DEVOPS_PAT") or ""
 
 
 async def main() -> None:
@@ -177,9 +177,9 @@ from dotenv import load_dotenv
 env_path = Path(".env")
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
-org = os.environ.get("ADO_ORG") or ""
-project = os.environ.get("ADO_PROJECT") or ""
-pat = os.environ.get("ADO_PAT") or ""
+org = os.environ.get("AZURE_DEVOPS_ORG") or ""
+project = os.environ.get("AZURE_DEVOPS_PROJECT") or ""
+pat = os.environ.get("AZURE_DEVOPS_PAT") or ""
 
 
 def parse_date(val: str | None):
@@ -264,9 +264,9 @@ from dotenv import load_dotenv
 env_path = Path(".env")
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
-org = os.environ.get("ADO_ORG") or ""
-project = os.environ.get("ADO_PROJECT") or ""
-pat = os.environ.get("ADO_PAT") or ""
+org = os.environ.get("AZURE_DEVOPS_ORG") or ""
+project = os.environ.get("AZURE_DEVOPS_PROJECT") or ""
+pat = os.environ.get("AZURE_DEVOPS_PAT") or ""
 
 
 async def main() -> None:
@@ -324,9 +324,9 @@ from dotenv import load_dotenv
 env_path = Path(".env")
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
-org = os.environ.get("ADO_ORG") or ""
-project = os.environ.get("ADO_PROJECT") or ""
-pat = os.environ.get("ADO_PAT") or ""
+org = os.environ.get("AZURE_DEVOPS_ORG") or ""
+project = os.environ.get("AZURE_DEVOPS_PROJECT") or ""
+pat = os.environ.get("AZURE_DEVOPS_PAT") or ""
 
 
 async def main() -> None:
@@ -388,9 +388,9 @@ from dotenv import load_dotenv
 env_path = Path(".env")
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
-org = os.environ.get("ADO_ORG") or ""
-project = os.environ.get("ADO_PROJECT") or ""
-pat = os.environ.get("ADO_PAT") or ""
+org = os.environ.get("AZURE_DEVOPS_ORG") or ""
+project = os.environ.get("AZURE_DEVOPS_PROJECT") or ""
+pat = os.environ.get("AZURE_DEVOPS_PAT") or ""
 
 
 async def main() -> None:
@@ -463,9 +463,9 @@ from dotenv import load_dotenv
 env_path = Path(".env")
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
-org = os.environ.get("ADO_ORG") or ""
-project = os.environ.get("ADO_PROJECT") or ""
-pat = os.environ.get("ADO_PAT") or ""
+org = os.environ.get("AZURE_DEVOPS_ORG") or ""
+project = os.environ.get("AZURE_DEVOPS_PROJECT") or ""
+pat = os.environ.get("AZURE_DEVOPS_PAT") or ""
 
 
 async def main() -> None:
