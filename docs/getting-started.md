@@ -104,8 +104,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Carrega as credenciais do arquivo .env
-load_dotenv(".env")
+# Carrega as credenciais do arquivo .env (apenas se existir)
+env_path = Path(".env")
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
 
 pat = os.environ.get("ADO_PAT") or os.environ.get("AZURE_DEVOPS_PAT") or ""
 org = os.environ.get("ADO_ORG") or os.environ.get("AZURE_DEVOPS_ORG") or ""
@@ -149,7 +151,8 @@ asyncio.run(main())
 |---|---|
 | `import asyncio` | Importa o módulo de programação assíncrona do Python (explicamos mais em [`docs/concepts.md`](concepts.md)). |
 | `from dotenv import load_dotenv` | Carrega as variáveis do arquivo `.env` para as variáveis de ambiente. |
-| `load_dotenv(".env")` | Executa o carregamento — sem isso, o Python não lê o `.env`. |
+| `env_path = Path(".env")` | Cria um objeto Path apontando para o `.env` (defensivo: não falha se o arquivo não existir). |
+| `if env_path.exists(): load_dotenv(...)` | Carrega as credenciais apenas se o `.env` existir. |
 | `os.environ.get(...)` | Lê o valor da variável de ambiente (ou string vazia se não existir). |
 | `AdoODataClient(org=..., project=..., pat=...)` | Cria o cliente de conexão com o Azure DevOps. |
 | `async with ... as client:` | Abre a conexão (modo assíncrono) e garante que será fechada ao final. |
@@ -177,6 +180,8 @@ Foram encontrados 5 work items:
   #1237  [Tarefa]    Done                  Documentar endpoints
   #1238  [Tarefa]    To Do                 Configurar ambiente de staging
 ```
+
+> 💡 **`State` vs `StateCategory`**: A coluna `State` retorna o nome localizado do estado (ex.: "Concluído", "Done", "Em Andamento") — ou seja, o valor depende do idioma do projeto. Para filtros que funcionam em qualquer idioma, use `StateCategory`, que retorna valores fixos em inglês: `"InProgress"`, `"Completed"`, `"Proposed"`.
 
 > Se aparecer `401 Unauthorized`, seu PAT pode ter expirado ou estar com escopo errado. Veja [`docs/troubleshooting.md`](troubleshooting.md).
 
