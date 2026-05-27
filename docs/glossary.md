@@ -75,7 +75,7 @@ async def buscar() -> None:
     print(resultado)
 ```
 
-**Veja também**: [Conceitos: Async/await](concepts.md#asyncawait-para-quem-nunca-viiu)
+**Veja também**: [Conceitos: Async/await](concepts.md#asyncawait-para-quem-nunca-viu)
 
 ---
 
