@@ -2,80 +2,90 @@
   "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json",
   "agents": {
     "sisyphus": {
-      "model": "openrouter/openrouter/free",
+      "model": "opencode/big-pickle",
       "fallback_models": [
-        "openrouter/deepseek/deepseek-v4-flash:free",
-        "openrouter/openai/gpt-oss-120b:free"
+        "openrouter/z-ai/glm-4.5-air:free",
+        "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+        "openrouter/openrouter/free"
       ]
     },
     "prometheus": {
-      "model": "openrouter/openrouter/free",
+      "model": "opencode/deepseek-v4-flash-free",
       "fallback_models": [
-        "openrouter/deepseek/deepseek-v4-flash:free",
-        "openrouter/openai/gpt-oss-120b:free"
+        "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+        "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+        "openrouter/openrouter/free"
       ]
     },
     "oracle": {
-      "model": "openrouter/openrouter/free",
+      "model": "opencode/deepseek-v4-flash-free",
       "fallback_models": [
-        "openrouter/deepseek/deepseek-v4-flash:free",
-        "openrouter/nvidia/nemotron-3-super-120b-a12b:free"
+        "openrouter/qwen/qwen3-coder:free",
+        "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+        "openrouter/openrouter/free"
       ]
     },
     "momus": {
-      "model": "openrouter/openrouter/free",
+      "model": "opencode/deepseek-v4-flash-free",
       "fallback_models": [
-        "openrouter/openai/gpt-oss-120b:free",
-        "openrouter/deepseek/deepseek-v4-flash:free"
+        "openrouter/z-ai/glm-4.5-air:free",
+        "openrouter/qwen/qwen3-coder:free",
+        "openrouter/openrouter/free"
       ]
     },
     "metis": {
-      "model": "openrouter/openrouter/free",
+      "model": "opencode/deepseek-v4-flash-free",
       "fallback_models": [
         "openrouter/qwen/qwen3-coder:free",
-        "openrouter/deepseek/deepseek-v4-flash:free"
+        "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+        "openrouter/openrouter/free"
       ]
     },
     "hephaestus": {
-      "model": "openrouter/openrouter/free",
+      "model": "openrouter/qwen/qwen3-coder:free",
       "fallback_models": [
-        "openrouter/qwen/qwen3-coder:free",
-        "openrouter/openai/gpt-oss-20b:free"
+        "opencode/deepseek-v4-flash-free",
+        "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+        "openrouter/openrouter/free"
       ]
     },
     "atlas": {
-      "model": "openrouter/openrouter/free",
+      "model": "openrouter/qwen/qwen3-coder:free",
       "fallback_models": [
-        "openrouter/qwen/qwen3-coder:free",
-        "openrouter/deepseek/deepseek-v4-flash:free"
+        "opencode/deepseek-v4-flash-free",
+        "openrouter/openai/gpt-oss-20b:free",
+        "openrouter/openrouter/free"
       ]
     },
     "explore": {
-      "model": "openrouter/openrouter/free",
+      "model": "opencode/deepseek-v4-flash-free",
       "fallback_models": [
-        "openrouter/openai/gpt-oss-20b:free",
-        "openrouter/qwen/qwen3-next-80b-a3b-instruct:free"
+        "openrouter/qwen/qwen3-coder:free",
+        "openrouter/qwen/qwen3-next-80b-a3b-instruct:free",
+        "openrouter/openrouter/free"
       ]
     },
     "librarian": {
-      "model": "openrouter/openrouter/free",
+      "model": "opencode/deepseek-v4-flash-free",
       "fallback_models": [
-        "openrouter/openai/gpt-oss-20b:free",
-        "openrouter/meta-llama/llama-3.3-70b-instruct:free"
+        "openrouter/meta-llama/llama-3.3-70b-instruct:free",
+        "openrouter/qwen/qwen3-coder:free",
+        "openrouter/openrouter/free"
       ]
     },
     "sisyphus-junior": {
-      "model": "openrouter/openrouter/free",
+      "model": "openrouter/qwen/qwen3-coder:free",
       "fallback_models": [
+        "opencode/deepseek-v4-flash-free",
         "openrouter/openai/gpt-oss-20b:free",
-        "openrouter/qwen/qwen3-coder:free"
+        "openrouter/openrouter/free"
       ]
     },
     "multimodal-looker": {
-      "model": "openrouter/openrouter/free",
+      "model": "openrouter/google/gemma-4-31b-it:free",
       "fallback_models": [
-        "openrouter/google/gemma-4-31b-it:free",
-        "openrouter/nvidia/nemotron-nano-12b-v2-vl:free"
+        "openrouter/nvidia/nemotron-nano-12b-v2-vl:free",
+        "openrouter/openrouter/free"
       ]
     }
   },
@@ -92,5 +102,9 @@
   },
   "tmux": {
     "enabled": false
+  },
+  "git_master": {
+    "commit_footer": false,
+    "include_co_authored_by": false
   }
 }
