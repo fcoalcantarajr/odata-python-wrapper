@@ -357,3 +357,46 @@ def test_f10_hr13_still_enforced() -> None:
     apply_obj = Apply(entity_type="WorkItemSnapshot").aggregate("Count", "sum")
     with pytest.raises(ValueError, match=r"WorkItemSnapshot.*groupby\(DateSK\)"):
         apply_obj.validate()
+
+
+def test_f10_multiple_filters_append() -> None:
+    """Multiple .filter() calls append, not replace — each is a separate
+    pipeline step. This is the intended F10 semantics: operations are
+    added to the pipeline in declaration order."""
+    f1 = Filter.eq("State", "Active")
+    f2 = Filter.gt("Priority", "High")
+    result = Apply().filter(f1).filter(f2).build()
+    assert result == (
+        "$apply=filter(State eq 'Active')/filter(Priority gt 'High')"
+    )
+
+
+def test_f10_groupby_repositioned_by_second_call() -> None:
+    """Second .groupby() replaces the first at its original position
+    (idempotency), preserving the relative ordering with other ops."""
+    f = Filter.eq("State", "Active")
+    result = (
+        Apply()
+        .groupby("Priority")
+        .filter(f)
+        .groupby("State")  # replaces groupby(Priority) at position 0
+        .build()
+    )
+    # groupby is still before filter (since it was declared before filter)
+    assert result == (
+        "$apply=groupby((State))/filter(State eq 'Active')"
+    )
+
+
+def test_f10_empty_groupby_raises() -> None:
+    """Empty groupby() raises ValueError (invalid OData)."""
+    with pytest.raises(ValueError, match="requires at least one field"):
+        Apply().groupby()  # type: ignore[call-arg]  # reason: intentional empty call to test guard
+    with pytest.raises(ValueError, match="requires at least one field"):
+        Apply().groupby([])
+
+
+def test_f10_class_shortcut_multiple_string_args() -> None:
+    """Class shortcut Apply.groupby('A', 'B') correctly includes all args."""
+    result = Apply.groupby("State", "Priority").build()
+    assert result == "$apply=groupby((State,Priority))"

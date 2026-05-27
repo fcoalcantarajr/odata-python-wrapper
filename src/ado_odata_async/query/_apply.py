@@ -70,6 +70,9 @@ class Apply:
                 fields = list(args[0])
             else:
                 fields = [arg for arg in args if isinstance(arg, str)]
+            if not fields:
+                msg = "groupby() requires at least one field"
+                raise ValueError(msg)
             # Replace existing groupby if present (groupby is idempotent)
             for i, (op_name, _) in enumerate(self._operations):
                 if op_name == "groupby":
@@ -80,7 +83,10 @@ class Apply:
         # Class-level shortcut: self is the first argument (fields)
         instance = Apply()  # type: ignore[unreachable]  # reason: intentional dual-role — self is fields at class level
         if isinstance(self, str):
-            instance._operations.append(("groupby", [self]))
+            # Forward *args to support Apply.groupby("A", "B", "C")
+            fields = [self]
+            fields.extend(arg for arg in args if isinstance(arg, str))
+            instance._operations.append(("groupby", fields))
         else:
             instance._operations.append(("groupby", list(self)))
         return instance
