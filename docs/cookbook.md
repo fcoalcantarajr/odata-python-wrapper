@@ -186,6 +186,8 @@ def parse_date(val: str | None):
     if not val:
         return None
     try:
+        # ISO 8601: o Azure DevOps retorna datas UTC no formato "2025-01-15T10:30:00Z"
+        # O replace("Z", "+00:00") converte o sufixo Z para formato legível pelo Python
         return datetime.fromisoformat(val.replace("Z", "+00:00"))
     except Exception:
         return None
@@ -241,6 +243,8 @@ Cycle time p95:   14.1 dias
 ```
 
 **Como funciona**: Filtramos por `StateCategory eq 'Completed'` para pegar items já finalizados. Calculamos a diferença entre `ActivatedDate` (quando começou) e `ClosedDate` (quando terminou). Usamos percentis (p50, p85, p95) em vez de média porque a distribuição de cycle time geralmente é assimétrica.
+
+> ⚠️ **Paginação sem limite**: o `client.paginate()` itera **indefinidamente** enquanto houver dados na API. Para conjuntos muito grandes (centenas de milhares de registros), considere adicionar um contador de páginas ou usar `break` após um número máximo. Exemplo: `async for page in client.paginate(...): if page_count >= 50: break`.
 
 ---
 
@@ -446,7 +450,7 @@ asyncio.run(main())
 
 **Quando você precisa**: consultar `WorkItemSnapshot` ou fazer agregações (contagens, somas agrupadas).
 
-> ⚠️ **Importante**: o Azure DevOps Analytics exige a cláusula `as <alias>` no aggregate. Sem o alias (ex.: `aggregate(WorkItemId with countdistinct as WorkItemId)`), o servidor retorna `400 Bad Request`. Esta biblioteca sempre gera o alias automaticamente.
+> ⚠️ **Importante**: o Azure DevOps Analytics exige a cláusula `as <alias>` no aggregate. Sem o alias (ex.: `aggregate(WorkItemId with countdistinct)`) — repare que a cláusula `as WorkItemId` é obrigatória mas gerada automaticamente, o servidor retorna `400 Bad Request`. Esta biblioteca sempre gera o alias automaticamente.
 
 ```python
 """Receita 8: aplicar $apply com groupby e aggregate."""
