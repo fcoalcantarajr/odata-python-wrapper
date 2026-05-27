@@ -12,7 +12,7 @@ Each test maps to one AC from specs/006-apply-dsl.md:
   - AC-3: filter wrapping                → "$apply=filter(State eq 'Active')"
   - AC-4: aggregate method               → "$apply=aggregate(Effort with sum)"
   - AC-5: groupby then aggregate         → "$apply=groupby((...))/aggregate(...)"
-  - AC-6: multiple aggregations          → contains "aggregate(Count with sum, Effort with avg)"
+  - AC-6: multiple aggregations          → contains "aggregate(Count with sum, Effort with average)"
   - AC-7: WorkItemSnapshot no groupby    → ValueError with "WorkItemSnapshot" and "groupby(DateSK)"
   - AC-8: WorkItemBoardSnapshot w/groupby  → validate() returns None
 """
@@ -96,15 +96,15 @@ def test_ac5_groupby_then_aggregate() -> None:
 def test_ac6_multiple_aggregations() -> None:
     """AC-6: multiple aggregations in the same groupby scope.
 
-    Apply.groupby("State").aggregate("Count","sum").aggregate("Effort","avg").build()
-      → result contains "aggregate(Count with sum as Count, Effort with avg as Effort)"
+    Apply.groupby("State").aggregate("Count","sum").aggregate("Effort","average").build()
+      → result contains "aggregate(Count with sum as Count, Effort with average as Effort)"
 
     Asserts:
-      - build() contains "aggregate(Count with sum as Count, Effort with avg as Effort)"
+      - build() contains "aggregate(Count with sum as Count, Effort with average as Effort)"
     """
-    result = Apply.groupby("State").aggregate("Count", "sum").aggregate("Effort", "avg").build()
+    result = Apply.groupby("State").aggregate("Count", "sum").aggregate("Effort", "average").build()
     # spec-correction: SPEC-006 requires "as <alias>" per OData v4.0
-    assert "aggregate(Count with sum as Count, Effort with avg as Effort)" in result
+    assert "aggregate(Count with sum as Count, Effort with average as Effort)" in result
 
 
 def test_ac7_enforce_snapshot_requires_groupby() -> None:
@@ -190,7 +190,7 @@ def test_instance_aggregate_chaining() -> None:
     """Instance aggregate mutation can be chained.
 
     apply_instance = Apply()
-    apply_instance.aggregate("Count", "sum").aggregate("Effort", "avg")
+    apply_instance.aggregate("Count", "sum").aggregate("Effort", "average")
       → returns Apply with both aggregations
 
     Asserts:
@@ -200,10 +200,11 @@ def test_instance_aggregate_chaining() -> None:
     apply_obj = Apply()
     result = apply_obj.aggregate("Count", "sum")
     assert result is apply_obj
-    result2 = result.aggregate("Effort", "avg")
+    result2 = result.aggregate("Effort", "average")
     assert result2 is apply_obj
     # spec-correction: SPEC-006 requires "as <alias>" per OData v4.0
-    assert "$apply=aggregate(Count with sum as Count, Effort with avg as Effort)" in result2.build()
+    expected = "$apply=aggregate(Count with sum as Count, Effort with average as Effort)"
+    assert expected in result2.build()
 
 
 def test_instance_filter_chaining() -> None:
