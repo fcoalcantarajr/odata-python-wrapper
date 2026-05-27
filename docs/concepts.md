@@ -83,7 +83,7 @@ result = await (
     client.query("WorkItemSnapshot")
     .apply(
         Apply()
-        .filter(Filter.eq("State", "Active"))
+        .filter(Filter.eq("StateCategory", "InProgress"))
         .groupby("DateSK", "State")
         .aggregate("WorkItemId", "countdistinct")
     )

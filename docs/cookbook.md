@@ -17,7 +17,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(".env")
+env_path = Path(".env")
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
 org = os.environ.get("ADO_ORG") or os.environ.get("AZURE_DEVOPS_ORG") or ""
 project = os.environ.get("ADO_PROJECT") or os.environ.get("AZURE_DEVOPS_PROJECT") or ""
 pat = os.environ.get("ADO_PAT") or os.environ.get("AZURE_DEVOPS_PAT") or ""
@@ -68,7 +70,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(".env")
+env_path = Path(".env")
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
 org = os.environ.get("ADO_ORG") or ""
 project = os.environ.get("ADO_PROJECT") or ""
 pat = os.environ.get("ADO_PAT") or ""
@@ -105,8 +109,6 @@ asyncio.run(main())
 
 **Como funciona**: `Filter.and_` combina múltiplas condições. `Filter.ge` é "maior ou igual" (greater or equal) — funciona com dates em formato ISO. `StateCategory` funciona em qualquer idioma.
 
-> ⚠️ **Dois tipos de filtro**: O `QueryBuilder.filter()` (usado acima) gera `$filter` na URL. Já o `Apply.filter()` gera `filter(...)` dentro da expressão `$apply`. Misturar os dois pode gerar resultados inesperados — `$filter` é aplicado antes da agregação, `$apply/filter` depois. Se você estiver usando `Apply`, prefira o `Apply.filter()` para manter tudo na mesma expressão.
-
 ---
 
 ## 3. Paginar todos os items de um ano
@@ -121,7 +123,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(".env")
+env_path = Path(".env")
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
 org = os.environ.get("ADO_ORG") or ""
 project = os.environ.get("ADO_PROJECT") or ""
 pat = os.environ.get("ADO_PAT") or ""
@@ -170,7 +174,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(".env")
+env_path = Path(".env")
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
 org = os.environ.get("ADO_ORG") or ""
 project = os.environ.get("ADO_PROJECT") or ""
 pat = os.environ.get("ADO_PAT") or ""
@@ -180,8 +186,6 @@ def parse_date(val: str | None):
     if not val:
         return None
     try:
-        # ISO 8601: o Azure DevOps retorna datas UTC no formato "2025-01-15T10:30:00Z"
-        # O replace("Z", "+00:00") converte o sufixo Z para formato ISO 8601 legível pelo Python
         return datetime.fromisoformat(val.replace("Z", "+00:00"))
     except Exception:
         return None
@@ -238,8 +242,6 @@ Cycle time p95:   14.1 dias
 
 **Como funciona**: Filtramos por `StateCategory eq 'Completed'` para pegar items já finalizados. Calculamos a diferença entre `ActivatedDate` (quando começou) e `ClosedDate` (quando terminou). Usamos percentis (p50, p85, p95) em vez de média porque a distribuição de cycle time geralmente é assimétrica.
 
-> ⚠️ **Paginação sem limite**: O `client.paginate()` itera **indefinidamente** enquanto houver dados na API. Para conjuntos muito grandes (centenas de milhares de registros), considere adicionar um contador de páginas ou usar `break` após um número máximo. Exemplo: `async for page in client.paginate(...): if page_count >= 50: break`.
-
 ---
 
 ## 5. Agrupar por WorkItemType e contar
@@ -255,7 +257,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(".env")
+env_path = Path(".env")
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
 org = os.environ.get("ADO_ORG") or ""
 project = os.environ.get("ADO_PROJECT") or ""
 pat = os.environ.get("ADO_PAT") or ""
@@ -313,7 +317,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(".env")
+env_path = Path(".env")
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
 org = os.environ.get("ADO_ORG") or ""
 project = os.environ.get("ADO_PROJECT") or ""
 pat = os.environ.get("ADO_PAT") or ""
@@ -375,7 +381,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(".env")
+env_path = Path(".env")
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
 org = os.environ.get("ADO_ORG") or ""
 project = os.environ.get("ADO_PROJECT") or ""
 pat = os.environ.get("ADO_PAT") or ""
@@ -448,7 +456,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(".env")
+env_path = Path(".env")
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
 org = os.environ.get("ADO_ORG") or ""
 project = os.environ.get("ADO_PROJECT") or ""
 pat = os.environ.get("ADO_PAT") or ""

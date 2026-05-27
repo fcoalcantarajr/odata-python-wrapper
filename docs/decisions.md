@@ -92,3 +92,37 @@ Formato: `[INSTITUTED]` (humano confirmou) ou `[CANDIDATE]` (proposed by retrosp
 - **Context:** Após 8 specs de DSLs baixo nível (Filter, Apply, serialize, batch), usuários precisam de uma API fluente que componha todas elas sem conhecer detalhes de serialização.
 - **Decision:** `QueryBuilder` em `query/_builder.py` com setters imutáveis (cada um retorna nova instância). Métodos: `.filter()`, `.select()`, `.top()`, `.skip()`, `.orderby()`, `.expand()`, `.apply()`. Terminal: `.get()` (retorna dict) e `.paginate()` (async iterator). Fábrica via `client.query(entity_set)`.
 - **Consequences:** Chamadas encadeadas: `client.query("WorkItems").filter(...).select(...).top(10)`. `str(builder)` serializa com `serialize()` respeitando HR-9. Imutabilidade garantida por deepcopy interno.
+
+## [CANDIDATE] ADR-012 — Doc-API alignment validation (doc-check gate)
+
+- **Date:** 2026-05-27
+- **Status:** CANDIDATE (proposed by retrospector)
+- **Context:** Documentation fix cycle F1–F9 revealed that doc examples diverged
+  from the approved spec (`specs/006-apply-dsl.md`) and from the actual source
+  code API. No existing gate catches mismatches between docs and code. Examples:
+  `aggregate("Sum", "Effort")` (inverted args), `Count` as method name (should
+  be `countdistinct`), inconsistent `load_dotenv()` pattern.
+- **Decision (proposed):** Adicionar um gate opcional de "doc-check" que extrai
+  trechos de código Python de arquivos `.md` em `docs/` e valida que as chamadas
+  de API correspondem à assinatura real dos métodos em `src/`. Idealmente como
+  script em `scripts/doc-check.sh` ou hook de pre-commit.
+- **Consequences (proposed):** Previne rework cíclico de documentação. Usuários
+  seguem exemplos que realmente funcionam. Custo de implementação: ~1 dia para
+  script inicial de extração + validação.
+- **Riscos (proposed):** Pode gerar falsos positivos se doc usa pseudo-código ou
+  variações intencionais. Mitigação: ignorar blocos marcados com
+  `# doc-check: skip`.
+
+## ADR-013 [CANDIDATE] — Paginator max-pages guard (F6(b))
+
+- **Date:** 2026-05-27
+- **Status:** CANDIDATE (proposed by spec-author review)
+- **Context:** `client.paginate()` uses an unbounded `while True` loop that can
+  theoretically run indefinitely if ADO returns non-empty pages forever.
+  Intern hit a 60s timeout with large datasets.
+- **Decision (proposed):** Postpone implementation. Requires a formal spec
+  (`specs/NNN-paginate-max-pages.md`) before any `src/` change (HR-1).
+- **Rationale:** The doc-only fix (unbounded warning in cookbook Recipe 4) was
+  applied as F6(a). Library enhancement (optional `max_pages` parameter +
+  `ClientTimeout` default) needs proper spec with acceptance criteria scoped
+  to pagination, not general DSL.

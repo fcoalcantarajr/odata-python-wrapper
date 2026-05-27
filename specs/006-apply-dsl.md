@@ -53,7 +53,7 @@ Then `str(apply) == "$apply=filter(State eq 'Active')"`
 ```
 Given Apply builder vazio
 When `.aggregate("Effort", "sum")`
-Then `str(apply) == "$apply=aggregate(Effort with sum)"`
+Then `str(apply) == "$apply=aggregate(Effort with sum as Effort)"`
 ```
 
 ### AC-5: composto groupby + aggregate
@@ -61,15 +61,15 @@ Then `str(apply) == "$apply=aggregate(Effort with sum)"`
 ```
 Given Apply vazio
 When `.groupby(["TeamProject","WorkItemType"]).aggregate("Count","sum")`
-Then `str(apply) == "$apply=groupby((TeamProject,WorkItemType))/aggregate(Count with sum)"`
+Then `str(apply) == "$apply=groupby((TeamProject,WorkItemType))/aggregate(Count with sum as Count)"`
 ```
 
 ### AC-6: múltiplas agregações
 
 ```
 Given Apply vazio
-When `.groupby("State").aggregate("Count","sum").aggregate("Effort","avg")`
-Then result contains "aggregate(Count with sum, Effort with avg)"
+When `.groupby("State").aggregate("Count","sum").aggregate("Effort","average")`
+Then result contains "aggregate(Count with sum as Count, Effort with average as Effort)"
 ```
 
 ### AC-7: enforce HR-13 — Snapshot sem groupby levanta erro

@@ -125,11 +125,12 @@ Além disso, o nome do método deve estar em **minúsculas**. Os métodos válid
 **O que fazer**: Verifique a ordem da chamada:
 ```python
 # ❌ ERRADO: método na posição do campo, campo na posição do método
+Apply().groupby("State").aggregate("Count", "WorkItemId")   # "Count" vira método — inválido
 Apply().groupby("State").aggregate("Sum", "Effort")
 
 # ✅ CORRETO: campo primeiro, método em segundo (minúsculas)
-Apply().groupby("State").aggregate("Effort", "sum")
 Apply().groupby("State").aggregate("WorkItemId", "countdistinct")
+Apply().groupby("State").aggregate("Effort", "sum")
 ```
 
 **Como prevenir**: Sempre escreva `aggregate("<campo>", "<método>")` — o campo é o dado que você quer agregar (ex.: `Effort`, `WorkItemId`, `StoryPoints`), o método é a operação (`sum`, `average`, `countdistinct`, `min`, `max`).

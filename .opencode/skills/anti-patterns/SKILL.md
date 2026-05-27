@@ -37,4 +37,43 @@ Cresce via `/retro`. Cada entry: contexto, smell, correção.
 **Por que ruim:** PAT não vai melhorar com retry; desperdício + atrasa erro.
 **Correção:** retry só em 429/5xx; `AuthenticationError` não-retryável (HR-15).
 
-*(retrospector adiciona AP-006+ ao longo do tempo)*
+## AP-006 [CANDIDATE] — Nome de método de agregação divergente do serviço ADO
+
+**Contexto:** documentation fix cycle F1–F9 (May 2026). Docs usavam `Count` como
+método de agregação (ex.: `aggregate("WorkItemId", "Count")`), mas o Azure DevOps
+Analytics só aceita `countdistinct` (minúsculas). Também havia casos de
+argumentos invertidos (ex.: `aggregate("Sum", "Effort")`).
+
+**Smell:** usar `Count`, `Sum`, `Average` (capitalizados) como método em
+`.aggregate()`, ou inverter a ordem dos argumentos.
+
+**Por que ruim:** ADO Analytics retorna `400 Bad Request` — método `Count` não
+existe. A confusão visual entre `Count` (método inexistente) e `Count` (nome de
+coluna válido, usado em testes) agrava o problema.
+
+**Correção:** usar sempre `countdistinct`, `sum`, `average`, `min`, `max` —
+minúsculas, exatamente como o ADO Analytics aceita. A ordem
+`aggregate(field, method)` é canônica: campo primeiro, método depois. Validar
+exemplos de docs contra código fonte (`_apply.py`) e contra spec aprovado.
+
+## AP-007 [CANDIDATE] — Doc-API drift (exemplos de documentação inconsistentes
+com spec/código)
+
+**Contexto:** documentation fix cycle F1–F9 (May 2026). O spec
+`006-apply-dsl.md` já usava ordem canônica correta (`aggregate("Effort", "sum")`),
+mas cookbook.md, concepts.md e getting-started.md divergiam — usavam `Count` como
+método, invertiam argumentos, ou usavam `load_dotenv()` inconsistente.
+
+**Smell:** documentação escreve exemplos que divergem da API real do código ou do
+spec aprovado — sem que nenhum gate detecte a divergência.
+
+**Por que ruim:** gera rework cíclico (corrigir docs → audit → corrigir de novo).
+Usuários seguem exemplos errados e recebem `400 Bad Request`. Quebra a confiança
+na documentação como fonte confiável.
+
+**Correção:** todo PR de doc deve ser validado contra (a) spec aprovado,
+(b) código fonte da API, (c) testes unitários. Adicionar gate opcional de
+"doc-check" que extrai exemplos de código de docs e verifica que chamam a API
+correta (assinatura, nomes de método, ordem de argumentos).
+
+*(retrospector adiciona AP-008+ ao longo do tempo)*
