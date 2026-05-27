@@ -1,7 +1,6 @@
 ---
 model: opencode/deepseek-v4-flash-free
 fallback_models:
-  - opencode/deepseek-v4-flash-free
   - openrouter/qwen/qwen3-coder:free
 mode: subagent
 description: A cada 3-4 specs entregues, faz retrospectiva: analisa o que travou, sugere anti-patterns novos pra `.opencode/skills/anti-patterns/`, append candidates em `docs/decisions.md` (como `[CANDIDATE]`, nunca como instituted). Nunca gradua candidate -> instituted (só humano grada).

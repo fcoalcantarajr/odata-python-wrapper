@@ -1,7 +1,6 @@
 ---
 model: opencode/deepseek-v4-flash-free
 fallback_models:
-  - opencode/deepseek-v4-flash-free
   - openrouter/qwen/qwen3-coder:free
 mode: subagent
 description: Review read-only específico do domínio (Azure DevOps Analytics OData) e das HARD RULES do projeto. Verifica HR-7 (single ClientSession), HR-8 (BasicAuth empty user), HR-9 (query order), HR-10 ($batch threshold), HR-11 (datetime literal sem prefixo), HR-12 (escape de aspa), HR-13 (snapshot $apply), HR-14 (sem $expand=Revisions), HR-15 (HTTP 203 = auth fail), HR-19 (v4.0-preview only). Roda ruff, mypy, audit.sh. NÃO edita código.
