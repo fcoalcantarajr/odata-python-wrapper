@@ -83,14 +83,14 @@ def test_ac5_groupby_then_aggregate() -> None:
     """AC-5: groupby composed with aggregate (fluent chain).
 
     Apply.groupby(["TeamProject","WorkItemType"]).aggregate("Count","sum").build()
-      → "$apply=groupby((TeamProject,WorkItemType))/aggregate(Count with sum as Count)"
+      → "$apply=groupby((TeamProject,WorkItemType),aggregate(Count with sum as Count))"
 
     Asserts:
-      - build() returns the full composed $apply string
+      - build() returns the full composed $apply string with nested aggregate
     """
     result = Apply.groupby(["TeamProject", "WorkItemType"]).aggregate("Count", "sum").build()
-    # spec-correction: SPEC-006 requires "as <alias>" per OData v4.0
-    assert result == "$apply=groupby((TeamProject,WorkItemType))/aggregate(Count with sum as Count)"
+    # F12: aggregate is nested inside groupby when consecutive
+    assert result == "$apply=groupby((TeamProject,WorkItemType),aggregate(Count with sum as Count))"
 
 
 def test_ac6_multiple_aggregations() -> None:
@@ -273,13 +273,12 @@ def test_f10_filter_groupby_aggregate_order() -> None:
         Apply()
         .filter(Filter.eq("StateCategory", "Completed"))
         .groupby("DateSK", "State")
-        .aggregate("WorkItemId", "countdistinct")
+        .aggregate("$count", alias="Count")
         .build()
     )
     assert result == (
         "$apply=filter(StateCategory eq 'Completed')"
-        "/groupby((DateSK,State))"
-        "/aggregate(WorkItemId with countdistinct as WorkItemId)"
+        "/groupby((DateSK,State),aggregate($count as Count))"
     )
 
 
@@ -326,10 +325,10 @@ def test_f10_consecutive_aggregate_coalesce() -> None:
         .aggregate("Effort", "average")
         .build()
     )
-    # Single aggregate clause with both metrics
+    # Single aggregate clause with both metrics, nested inside groupby (F12)
     assert result == (
-        "$apply=groupby((State))"
-        "/aggregate(Count with sum as Count, Effort with average as Effort)"
+        "$apply=groupby((State),"
+        "aggregate(Count with sum as Count, Effort with average as Effort))"
     )
 
 
@@ -400,3 +399,66 @@ def test_f10_class_shortcut_multiple_string_args() -> None:
     """Class shortcut Apply.groupby('A', 'B') correctly includes all args."""
     result = Apply.groupby("State", "Priority").build()
     assert result == "$apply=groupby((State,Priority))"
+
+
+# -----------------------------------------------------------------------
+# F12: groupby+aggregate nesting + countdistinct guard
+# -----------------------------------------------------------------------
+
+
+def test_f12_groupby_aggregate_nested_count() -> None:
+    """F12 AC-1: aggregate after groupby emits nested form with $count."""
+    result = (
+        Apply()
+        .groupby("DateSK", "State")
+        .aggregate("$count", alias="Count")
+        .build()
+    )
+    assert result == "$apply=groupby((DateSK,State),aggregate($count as Count))"
+
+
+def test_f12_filter_groupby_aggregate_nested() -> None:
+    """F12 AC-2: filter standalone + nested groupby/aggregate."""
+    result = (
+        Apply()
+        .filter(Filter.eq("StateCategory", "Completed"))
+        .groupby("DateSK", "State")
+        .aggregate("$count", alias="Count")
+        .build()
+    )
+    assert result == (
+        "$apply=filter(StateCategory eq 'Completed')"
+        "/groupby((DateSK,State),aggregate($count as Count))"
+    )
+
+
+def test_f12_standalone_aggregate_unchanged() -> None:
+    """F12 AC-3: standalone aggregate (no groupby) keeps top-level form."""
+    result = Apply().aggregate("$count", alias="Count").build()
+    assert result == "$apply=aggregate($count as Count)"
+
+
+def test_f12_countdistinct_blocked() -> None:
+    """F12 AC-4a: countdistinct is rejected at DSL call time (instance)."""
+    with pytest.raises(NotImplementedError, match="countdistinct"):
+        Apply().aggregate("WorkItemId", "countdistinct")
+
+
+def test_f12_countdistinct_blocked_class_shortcut() -> None:
+    """F12 AC-4b: countdistinct rejected at class level too."""
+    with pytest.raises(NotImplementedError, match="countdistinct"):
+        Apply.aggregate("WorkItemId", "countdistinct")
+
+
+def test_f12_countdistinct_error_message() -> None:
+    """F12 AC-4c: countdistinct error message includes MS Learn URL and explanation."""
+    with pytest.raises(NotImplementedError) as exc_info:
+        Apply().aggregate("WorkItemId", "countdistinct")
+    msg = str(exc_info.value)
+    assert "countdistinct" in msg
+    assert (
+        "https://learn.microsoft.com/en-us/azure/devops/report/extend-analytics/odata-query-guidelines"
+        in msg
+    )
+    assert "$count" in msg
+    assert "sum/min/max/avg" in msg
