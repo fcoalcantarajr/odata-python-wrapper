@@ -53,18 +53,6 @@ class QueryBuilder:
         """Return the current options dict for client.get/paginate."""
         return dict(self._options)
 
-    def _extract_groupby_fields(self, apply_value: str) -> list[str] | None:
-        """Extract groupby field list from $apply value, or None if not present.
-
-        Parses ``groupby((field1,field2,...))`` using strict regex.
-        Returns trimmed field list or None if pattern not matched.
-        """
-        import re
-        m = re.search(r"groupby\(\(([^)]+)\)\)", apply_value)
-        if m:
-            return [f.strip() for f in m.group(1).split(",")]
-        return None
-
     # ── string representations ──────────────────────────────
 
     def __str__(self) -> str:
@@ -81,22 +69,13 @@ class QueryBuilder:
 
     def apply(self, a: Apply) -> QueryBuilder:
         """Add ``$apply`` clause."""
+        from ado_odata_async.query._apply import _check_snapshot_groupby
+
         b = self._copy()
         value = a.build()
         if value.startswith("$apply="):
             value = value[len("$apply=") :]
-        # HR-13: Snapshot entity sets require groupby on DateSK / DateValue
-        if self._entity_set in ("WorkItemSnapshot", "WorkItemBoardSnapshot"):
-            fields = self._extract_groupby_fields(value)
-            if fields is None:
-                raise ValueError(
-                    f"{self._entity_set} requires $apply with groupby((...)) per HR-13"
-                )
-            required = "DateSK" if self._entity_set == "WorkItemSnapshot" else "DateValue"
-            if required not in fields:
-                raise ValueError(
-                    f"{self._entity_set} requires $apply with groupby(({required})) per HR-13"
-                )
+        _check_snapshot_groupby(entity_set=self._entity_set, apply_value=value)
         b._options["$apply"] = value
         return b
 
@@ -144,23 +123,10 @@ class QueryBuilder:
 
     def _validate_hr13(self) -> None:
         """Raise ``ValueError`` if a snapshot entity set lacks required ``groupby``."""
-        if self._entity_set == "WorkItemSnapshot":
-            required = "DateSK"
-        elif self._entity_set == "WorkItemBoardSnapshot":
-            required = "DateValue"
-        else:
-            return
+        from ado_odata_async.query._apply import _check_snapshot_groupby
 
         apply_val = self._options.get("$apply", "")
-        if not apply_val:
-            raise ValueError(
-                f"{self._entity_set} requires $apply with groupby(({required})) per HR-13"
-            )
-        fields = self._extract_groupby_fields(apply_val)
-        if fields is None or required not in fields:
-            raise ValueError(
-                f"{self._entity_set} requires $apply with groupby(({required})) per HR-13"
-            )
+        _check_snapshot_groupby(entity_set=self._entity_set, apply_value=apply_val)
 
     # ── terminal operations ─────────────────────────────────
 

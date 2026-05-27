@@ -183,19 +183,8 @@ class Apply:
             is ``"WorkItemBoardSnapshot"`` and no
             ``groupby(DateValue)`` is present (HR-13 / gotcha 4).
         """
-        groupby_fields: list[str] = []
-        for op_name, payload in self._operations:
-            if op_name == "groupby":
-                groupby_fields = payload
-                break
-
-        if self._entity_type == "WorkItemSnapshot" and "DateSK" not in groupby_fields:
-            msg = f"{self._entity_type} requires groupby(DateSK)"
-            raise ValueError(msg)
-
-        if self._entity_type == "WorkItemBoardSnapshot" and "DateValue" not in groupby_fields:
-            msg = f"{self._entity_type} requires groupby(DateValue)"
-            raise ValueError(msg)
+        apply_value = self.build().removeprefix("$apply=")
+        _check_snapshot_groupby(entity_set=self._entity_type or "", apply_value=apply_value)
 
     # ------------------------------------------------------------------
     # Serialization
@@ -255,3 +244,41 @@ class Apply:
     def __str__(self) -> str:
         """Return the same as ``build()`` — the full ``$apply=...`` string."""
         return self.build()
+
+
+def _check_snapshot_groupby(entity_set: str, apply_value: str) -> None:
+    """Validate HR-13: Snapshot entity sets require groupby on DateSK/DateValue.
+
+    Shared single-source-of-truth for HR-13 enforcement (SR-004).
+
+    Parameters
+    ----------
+    entity_set:
+        Entity set name (e.g. ``"WorkItemSnapshot"``).
+    apply_value:
+        Serialized ``$apply`` value WITHOUT the ``$apply=`` prefix
+        (e.g. ``"groupby((DateSK))"``).
+
+    Raises
+    ------
+    ValueError
+        If *entity_set* is a snapshot type and *apply_value* lacks the
+        required ``groupby`` field.
+    """
+    required: str | None = {"WorkItemSnapshot": "DateSK", "WorkItemBoardSnapshot": "DateValue"}.get(
+        entity_set
+    )
+    if required is None:
+        return
+
+    import re
+
+    m = re.search(r"groupby\(\(([^)]+)\)\)", apply_value)
+    if m:
+        fields = [f.strip() for f in m.group(1).split(",")]
+        if required in fields:
+            return
+
+    raise ValueError(
+        f"{entity_set} requires groupby({required})"
+    )

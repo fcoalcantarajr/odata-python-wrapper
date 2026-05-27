@@ -1,8 +1,8 @@
 # Senior Python Veteran Audit — Phase 2 (Final Report)
 
-**Audit Date**: Session ongoing  
-**Auditor Persona**: 35-year Python veteran, Azure DevOps Analytics OData since 2018  
-**Repository**: `ado-odata-async` (async client for Azure DevOps OData v4.0-preview)  
+**Audit Date**: Session ongoing
+**Auditor Persona**: 35-year Python veteran, Azure DevOps Analytics OData since 2018
+**Repository**: `ado-odata-async` (async client for Azure DevOps OData v4.0-preview)
 **Methodology**: Full inventory → findings critique → auto-implement fixes (commit-by-commit)
 
 ---

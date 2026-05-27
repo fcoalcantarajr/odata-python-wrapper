@@ -21,3 +21,7 @@ class TransientError(AdoODataError):
 
 class RateLimitError(TransientError):
     """429 with Retry-After hint. Retryable, but capped attempts."""
+
+    def __init__(self, message: str, retry_after: float | None = None) -> None:
+        self.retry_after = retry_after
+        super().__init__(message)
