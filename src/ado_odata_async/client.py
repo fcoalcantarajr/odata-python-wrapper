@@ -118,6 +118,10 @@ class AdoODataClient:
     async def get_workitem(self, id_: int) -> WorkItem:
         """Fetch a single WorkItem by its WorkItemId.
 
+        Makes one OData query with ``$filter=WorkItemId eq {id_}`` and
+        ``$select=WorkItemId,Title,WorkItemType``. Returns the first result
+        parsed into a frozen WorkItem model.
+
         Args:
             id_: The WorkItemId to fetch.
 
@@ -146,10 +150,15 @@ class AdoODataClient:
     ) -> AsyncIterator[dict[str, Any]]:
         """Paginate over entity_set, yielding each page dict.
 
+        Uses ``$skip/$top`` offset-based pagination with automatic
+        ``@odata.nextLink`` following when present. Iteration terminates
+        when a page has fewer items than ``top`` AND no nextLink.
+
         Args:
             entity_set: OData entity set name (e.g. ``"WorkItems"``).
             top: Page size (``$top``). Must be >= 1.
-            query: Optional additional query parameters.
+            query: Optional additional query parameters merged with
+                ``$skip``/``$top``.
 
         Returns:
             AsyncIterator yielding page response dicts.
