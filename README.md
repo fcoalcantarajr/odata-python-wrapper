@@ -6,7 +6,7 @@ Cliente **Python assíncrono** para o **Azure DevOps Analytics OData** — focad
 
 ## Sobre
 
-O `ado-odata-async` é uma biblioteca que permite consultar dados do Azure Boards (work items, histórico, métricas de fluxo) usando a API Analytics OData do Azure DevOps. Ela foi construída para ser **rápida**, **segura** e **fácil de usar** — mesmo se você nunca ouviu falar de OData ou async/await.
+O `ado-odata-async` é uma biblioteca que permite consultar dados do Azure Boards (work items, histórico, métricas de fluxo) usando a API Analytics OData do Azure DevOps. Ela é **async-first** (aiohttp, não bloqueia rede), **type-safe** (Pydantic frozen + strict), e **OData-aware** (8 gotchas do Azure Analytics resolvidas na biblioteca) — mesmo se você nunca ouviu falar de OData ou async/await.
 
 Tudo o que você precisa:
 - Um PAT (Personal Access Token) com permissão de leitura
