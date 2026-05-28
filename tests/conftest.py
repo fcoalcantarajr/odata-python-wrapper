@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from collections.abc import Iterator
 
 import pytest
@@ -36,20 +35,11 @@ def base_url(fake_org: str, fake_project: str, odata_version: str) -> str:
 
 @pytest.fixture
 def mock_http() -> Iterator[aioresponses]:
+    """Mock HTTP fixture for tests that need to intercept aiohttp requests.
+
+    Tests register their specific handlers after this fixture yields.
+    The catch-all is NOT registered here — each test registers its own
+    default response if needed. This avoids monkey-patching aioresponses internals.
+    """
     with aioresponses() as m:
-        # Register catch-all first, then ensure it's always last in _matches
-        # so test-specific handlers (registered after yield) take priority.
-        # aioresponses 0.7.x uses first-match-wins over _matches dict (ordered).
-        m.get(re.compile(r".*"), repeat=True, payload={"value": []})
-        catchall_key: str = next(iter(m._matches))
-
-        # Wrap add() so every new registration moves catch-all to end.
-        original_add = m.add
-
-        def _add(url, method="GET", **kwargs):  # type: ignore[no-untyped-def]
-            original_add(url, method=method, **kwargs)
-            if catchall_key in m._matches:
-                m._matches[catchall_key] = m._matches.pop(catchall_key)
-
-        m.add = _add  # type: ignore[assignment]
         yield m

@@ -5,6 +5,8 @@ All tests must FAIL (RED phase) against current stub code in src/.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from aioresponses import aioresponses
 
@@ -20,6 +22,7 @@ async def test_ac1_session_reuse(
     mock_http: aioresponses,
 ) -> None:
     """AC-1: same ClientSession across calls."""
+    mock_http.get(re.compile(r".*"), repeat=True, payload={"value": []})
     async with AdoODataClient(
         org=fake_org,
         project=fake_project,
