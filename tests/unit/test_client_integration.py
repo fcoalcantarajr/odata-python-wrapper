@@ -47,7 +47,9 @@ async def test_get_401_raises_authentication_error(
             payload={},
         )
         async with AdoODataClient(
-            org=fake_org, project=fake_project, pat=fake_pat,
+            org=fake_org,
+            project=fake_project,
+            pat=fake_pat,
         ) as c:
             with pytest.raises(AuthenticationError):
                 await c.get("WorkItems")
@@ -67,7 +69,9 @@ async def test_get_203_html_raises_authentication_error(
             body="<html>Sign in</html>",
         )
         async with AdoODataClient(
-            org=fake_org, project=fake_project, pat=fake_pat,
+            org=fake_org,
+            project=fake_project,
+            pat=fake_pat,
         ) as c:
             with pytest.raises(AuthenticationError) as exc:
                 await c.get("WorkItems")
@@ -87,7 +91,9 @@ async def test_get_400_raises_bad_request_error(
             payload={"error": {"message": "Invalid query option"}},
         )
         async with AdoODataClient(
-            org=fake_org, project=fake_project, pat=fake_pat,
+            org=fake_org,
+            project=fake_project,
+            pat=fake_pat,
         ) as c:
             with pytest.raises(BadRequestError) as exc:
                 await c.get("WorkItems")
@@ -108,7 +114,9 @@ async def test_get_502_raises_transient_error(
             repeat=True,
         )
         async with AdoODataClient(
-            org=fake_org, project=fake_project, pat=fake_pat,
+            org=fake_org,
+            project=fake_project,
+            pat=fake_pat,
         ) as c:
             with pytest.raises(TransientError) as exc:
                 await c.get("WorkItems")
@@ -130,7 +138,9 @@ async def test_get_429_raises_rate_limit_error(
             repeat=True,
         )
         async with AdoODataClient(
-            org=fake_org, project=fake_project, pat=fake_pat,
+            org=fake_org,
+            project=fake_project,
+            pat=fake_pat,
         ) as c:
             with pytest.raises(RateLimitError) as exc:
                 await c.get("WorkItems")
@@ -153,13 +163,15 @@ async def test_get_serializes_query_canonical_order(
         m.get(re.compile(r".*"), payload={"value": []}, repeat=True)
 
         async with AdoODataClient(
-            org=fake_org, project=fake_project, pat=fake_pat,
+            org=fake_org,
+            project=fake_project,
+            pat=fake_pat,
         ) as c:
             await c.get("WorkItems", **{"$top": "10", "$filter": "State eq 'Active'"})
 
     # Verify serialize() was called by checking query params exist
     assert len(m.requests) >= 1
-    for (_method, url) in m.requests:
+    for _method, url in m.requests:
         qs = url.query_string
         assert "%24top" in qs or "$top" in qs, "Missing $top in query"
         assert "%24filter" in qs or "$filter" in qs, "Missing $filter in query"
@@ -171,14 +183,18 @@ async def test_get_serializes_query_canonical_order(
 
 def test_maybe_batch_with_service_root() -> None:
     url = "https://example.com/v4.0-preview/WorkItems?" + "$filter=" + ("x" * 3500)
-    method, result_url = maybe_batch("GET", url, threshold=3000, service_root="https://example.com/v4.0-preview")
+    method, result_url = maybe_batch(
+        "GET", url, threshold=3000, service_root="https://example.com/v4.0-preview"
+    )
     assert method == "POST"
     assert result_url == "https://example.com/v4.0-preview/$batch"
 
 
 def test_maybe_batch_short_url_stays_get() -> None:
     url = "https://example.com/WorkItems"
-    method, result_url = maybe_batch("GET", url, threshold=3000, service_root="https://example.com/v4.0-preview")
+    method, result_url = maybe_batch(
+        "GET", url, threshold=3000, service_root="https://example.com/v4.0-preview"
+    )
     assert method == "GET"
     assert result_url == url
 

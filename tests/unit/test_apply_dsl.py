@@ -307,11 +307,7 @@ def test_f10_all_6_permutations() -> None:
 def test_f10_consecutive_aggregate_coalesce() -> None:
     """Consecutive .aggregate().aggregate() coalesce into one clause."""
     result = (
-        Apply()
-        .groupby("State")
-        .aggregate("Count", "sum")
-        .aggregate("Effort", "average")
-        .build()
+        Apply().groupby("State").aggregate("Count", "sum").aggregate("Effort", "average").build()
     )
     # Single aggregate clause with both metrics, nested inside groupby (F12)
     assert result == (
@@ -323,11 +319,7 @@ def test_f10_consecutive_aggregate_coalesce() -> None:
 def test_f10_non_consecutive_aggregate_two_clauses() -> None:
     """Non-consecutive aggregate does NOT coalesce — two separate clauses."""
     result = (
-        Apply()
-        .aggregate("Count", "sum")
-        .groupby("State")
-        .aggregate("Effort", "average")
-        .build()
+        Apply().aggregate("Count", "sum").groupby("State").aggregate("Effort", "average").build()
     )
     # Two separate aggregate clauses
     assert "aggregate(Count with sum as Count)" in result
@@ -353,9 +345,7 @@ def test_f10_multiple_filters_append() -> None:
     f1 = Filter.eq("State", "Active")
     f2 = Filter.gt("Priority", "High")
     result = Apply().filter(f1).filter(f2).build()
-    assert result == (
-        "$apply=filter(State eq 'Active')/filter(Priority gt 'High')"
-    )
+    assert result == ("$apply=filter(State eq 'Active')/filter(Priority gt 'High')")
 
 
 def test_f10_groupby_repositioned_by_second_call() -> None:
@@ -370,9 +360,7 @@ def test_f10_groupby_repositioned_by_second_call() -> None:
         .build()
     )
     # groupby is still before filter (since it was declared before filter)
-    assert result == (
-        "$apply=groupby((State))/filter(State eq 'Active')"
-    )
+    assert result == ("$apply=groupby((State))/filter(State eq 'Active')")
 
 
 def test_f10_empty_groupby_raises() -> None:
@@ -396,12 +384,7 @@ def test_f10_class_shortcut_multiple_string_args() -> None:
 
 def test_f12_groupby_aggregate_nested_count() -> None:
     """F12 AC-1: aggregate after groupby emits nested form with $count."""
-    result = (
-        Apply()
-        .groupby("DateSK", "State")
-        .aggregate("$count", alias="Count")
-        .build()
-    )
+    result = Apply().groupby("DateSK", "State").aggregate("$count", alias="Count").build()
     assert result == "$apply=groupby((DateSK,State),aggregate($count as Count))"
 
 
@@ -462,3 +445,31 @@ def test_f12_class_shortcut_single_arg_raises_value_error() -> None:
     """Class shortcut Apply.aggregate('field') with single arg raises ValueError."""
     with pytest.raises(ValueError, match="requires a method argument"):
         Apply.aggregate("field")  # type: ignore[call-arg]  # reason: intentionally testing the guard
+
+
+def test_f12_non_consecutive_groupby_filter_aggregate() -> None:
+    """F12 non-consecutive case: groupby→filter→aggregate emits flat form (not nested).
+
+    When aggregate() is NOT immediately after groupby() (i.e., there's a filter
+    in between), the aggregate should NOT be nested inside groupby per F12 logic.
+    Instead, it emits flat form: groupby(...)/filter(...)/aggregate(...).
+
+    This tests the edge case to ensure build() handles non-consecutive correctly.
+
+    Asserts:
+      - build() emits flat form (not nested)
+      - filter is preserved between groupby and aggregate
+    """
+    result = (
+        Apply.groupby("State")
+        .filter(Filter.eq("Priority", "High"))
+        .aggregate("Count", "sum")
+        .build()
+    )
+    # Flat form: groupby/filter/aggregate (no nesting)
+    # This is the expected behavior when operations are non-consecutive
+    assert "groupby((State))" in result
+    assert "filter(Priority eq 'High')" in result
+    assert "aggregate(Count with sum as Count)" in result
+    # Ensure aggregate is NOT nested inside groupby (which would be: groupby(...,aggregate(...)))
+    assert "groupby((State),aggregate" not in result

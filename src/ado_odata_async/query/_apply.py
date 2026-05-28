@@ -250,7 +250,13 @@ def _check_snapshot_groupby(entity_set: str, apply_value: str) -> None:
     """Validate HR-13: Snapshot entity sets require groupby on DateSK/DateValue.
 
     Shared single-source-of-truth for HR-13 enforcement (SR-004).
-
+    **Why code-enforced, not audit.sh**:
+    Detecting Snapshot violations requires semantic analysis of the ``$apply``
+    expression tree (i.e., is DateSK/DateValue present in the outermost groupby?).
+    Bash regex cannot reliably distinguish this without full OData parsing, as
+    nested or chained operations can obscure the groupby field. Runtime validation
+    here (at query serialization time) is sufficient and robust: violations fail
+    immediately with a descriptive error, preventing silent bugs at the API level.
     Parameters
     ----------
     entity_set:
@@ -279,6 +285,4 @@ def _check_snapshot_groupby(entity_set: str, apply_value: str) -> None:
         if required in fields:
             return
 
-    raise ValueError(
-        f"{entity_set} requires groupby({required})"
-    )
+    raise ValueError(f"{entity_set} requires groupby({required})")

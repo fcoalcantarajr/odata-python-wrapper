@@ -43,15 +43,12 @@ class AdoODataClient:
         self._pat = pat
         self._batch_threshold = batch_threshold
         self._session: aiohttp.ClientSession | None = None
-        self._entered: bool = False
         self._has_entered_once: bool = False
 
     async def __aenter__(self) -> Self:
         if self._has_entered_once:
             raise RuntimeError("re-entry forbidden — single ClientSession per client (HR-7)")
-        if self._entered:
-            raise RuntimeError("already entered")
-        self._entered = True
+        self._has_entered_once = True
         self._session = aiohttp.ClientSession(auth=build_basic_auth(self._pat))
         logger.debug("client entered — pat=%s odata=%s", mask_pat(self._pat), ODATA_VERSION)
         return self
@@ -72,7 +69,6 @@ class AdoODataClient:
         assert self._session is not None
         await self._session.close()
         self._session = None
-        self._entered = False
         self._has_entered_once = True
         logger.debug("client exited — pat=%s odata=%s", mask_pat(self._pat), ODATA_VERSION)
 
@@ -116,6 +112,7 @@ class AdoODataClient:
                     return await parse_response(resp)
         except aiohttp.ClientError as exc:
             from ado_odata_async.exceptions import TransientError
+
             raise TransientError(f"Connection error: {exc}") from exc
 
     async def get_workitem(self, id_: int) -> WorkItem:

@@ -35,6 +35,7 @@ dev = [
 [package.dev-dependencies]
 dev = [
     { name = "aioresponses" },
+    { name = "pre-commit" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -63,6 +64,7 @@ provides-extras = ["dev"]
 [package.metadata.requires-dev]
 dev = [
     { name = "aioresponses", specifier = ">=0.7.8" },
+    { name = "pre-commit", specifier = ">=4.0,<5" },
     { name = "pytest-asyncio", specifier = ">=0.24,<0.25" },
     { name = "pytest-cov", specifier = ">=5.0.0" },
     { name = "ruff", specifier = "==0.6.9" },

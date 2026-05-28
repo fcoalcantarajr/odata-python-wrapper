@@ -106,10 +106,10 @@ async def test_ac5_odata_version_single_source(
 async def test_ac6_double_enter_fails(
     fake_pat: str,
 ) -> None:
-    """AC-6: double entry raises RuntimeError with 'already entered'."""
+    """AC-6: double entry raises RuntimeError with 're-entry forbidden'."""
     c = AdoODataClient(org="x", project="y", pat=fake_pat)
     async with c:
-        with pytest.raises(RuntimeError, match="already entered"):
+        with pytest.raises(RuntimeError, match="re-entry forbidden"):
             await c.__aenter__()
 
 

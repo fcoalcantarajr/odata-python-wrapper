@@ -55,8 +55,8 @@ Date:   [timestamp]
     - Coverage: 89.18% (maintained)
 ```
 
-**Files Modified**: 2  
-**Tests Added**: 1 (`test_sr_001_pagination_session.py`)  
+**Files Modified**: 2
+**Tests Added**: 1 (`test_sr_001_pagination_session.py`)
 **Details**:
 - `src/ado_odata_async/client.py` Line 87-90: `assert` → explicit RuntimeError
 - `src/ado_odata_async/pagination.py` Line 39-45: Added None-check before session access
@@ -78,7 +78,7 @@ Date:   [timestamp]
     - No logic changes, config cleanup only
 ```
 
-**Files Modified**: 2  
+**Files Modified**: 2
 **Details**:
 - `.env.example`: Removed duplicate entries (lines 15-16), kept canonical definitions (lines 12, 14)
 - `.gitignore`: Added `docs/_scratch/` guard to prevent audit artifacts leaking into version control
@@ -100,8 +100,8 @@ Date:   [timestamp]
     - Reduces confusion for new users following cookbook recipes
 ```
 
-**Files Modified**: 1 (`docs/cookbook.md`)  
-**Changes**: 14 lines (all 8 recipes updated)  
+**Files Modified**: 1 (`docs/cookbook.md`)
+**Changes**: 14 lines (all 8 recipes updated)
 **Details**:
 - Replaced `os.environ.get("ADO_ORG") or os.environ.get("AZURE_DEVOPS_ORG")` with `os.environ.get("AZURE_DEVOPS_ORG")`
 - Rationale: Single source of truth for env var naming; ADO_* was ad-hoc and undocumented
@@ -124,7 +124,7 @@ Date:   [timestamp]
     - All 129 tests pass
 ```
 
-**Files Modified**: 1 (`src/ado_odata_async/query/_builder.py`)  
+**Files Modified**: 1 (`src/ado_odata_async/query/_builder.py`)
 **Details**:
 - New helper: `_extract_groupby_fields(apply_value: str) -> list[str] | None`
 - Extracted regex pattern parsing into single function (DRY principle)
@@ -149,7 +149,7 @@ Date:   [timestamp]
     - No code logic changed, documentation only
 ```
 
-**Files Modified**: 1 (`src/ado_odata_async/metadata.py`)  
+**Files Modified**: 1 (`src/ado_odata_async/metadata.py`)
 **Details**:
 - Old: "intentionally deferred" (vague, no timeline)
 - New: Explicit rationale (CSDL parsing overhead, Pydantic already validates), Spec-013 trigger conditions, scope boundaries documented
@@ -171,7 +171,7 @@ Date:   [timestamp]
     - Fixes linting warnings without changing rationale content
 ```
 
-**Files Modified**: 1 (`src/ado_odata_async/metadata.py`)  
+**Files Modified**: 1 (`src/ado_odata_async/metadata.py`)
 **Details**: Ruff RUF002 linting compliance (ambiguous unicode characters)
 
 ---
@@ -282,10 +282,10 @@ $ bash scripts/audit.sh
 
 ## Auditor Sign-Off
 
-✅ All findings addressed.  
-✅ All validation gates passing.  
-✅ Coverage maintained above 85% threshold.  
-✅ HARD RULES enforcement verified.  
+✅ All findings addressed.
+✅ All validation gates passing.
+✅ Coverage maintained above 85% threshold.
+✅ HARD RULES enforcement verified.
 ✅ Commit history clean and traceable.
 
 **Confidence Level**: HIGH (35-year Python veteran, Azure DevOps Analytics since 2018, strict adherence to architectural HARD RULES)

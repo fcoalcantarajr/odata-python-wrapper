@@ -1,4 +1,5 @@
 """$metadata fetch + cache. Used by entity validation (deferred)."""
+
 from __future__ import annotations
 
 from typing import Any

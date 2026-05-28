@@ -79,7 +79,7 @@ def build_batch_get_body(query_url: str, service_root: str) -> str:
     """
     # Derive the relative URL from the service root
     prefix = service_root.rstrip("/") + "/"
-    relative = query_url[len(prefix):] if query_url.startswith(prefix) else query_url
+    relative = query_url[len(prefix) :] if query_url.startswith(prefix) else query_url
 
     body = (
         f"--{_BATCH_BOUNDARY}\r\n"

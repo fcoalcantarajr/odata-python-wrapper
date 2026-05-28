@@ -25,9 +25,7 @@ def test_ac1_valid_workitem_snapshot() -> None:
         )
     except ImportError:
         pytest.fail("_check_snapshot_groupby not yet implemented — RED phase")
-    result = _check_snapshot_groupby(
-        entity_set="WorkItemSnapshot", apply_value="groupby((DateSK))"
-    )
+    result = _check_snapshot_groupby(entity_set="WorkItemSnapshot", apply_value="groupby((DateSK))")
     assert result is None
 
 
@@ -39,9 +37,7 @@ def test_ac2_missing_datesk() -> None:
     from ado_odata_async.query._apply import _check_snapshot_groupby  # type: ignore[import-untyped]
 
     with pytest.raises(ValueError, match="DateSK"):
-        _check_snapshot_groupby(
-            entity_set="WorkItemSnapshot", apply_value="groupby((State))"
-        )
+        _check_snapshot_groupby(entity_set="WorkItemSnapshot", apply_value="groupby((State))")
 
 
 # ── AC-3: Shared function validates WorkItemBoardSnapshot ─────────
@@ -65,9 +61,7 @@ def test_ac4_missing_datevalue() -> None:
     from ado_odata_async.query._apply import _check_snapshot_groupby  # type: ignore[import-untyped]
 
     with pytest.raises(ValueError, match="DateValue"):
-        _check_snapshot_groupby(
-            entity_set="WorkItemBoardSnapshot", apply_value="groupby((State))"
-        )
+        _check_snapshot_groupby(entity_set="WorkItemBoardSnapshot", apply_value="groupby((State))")
 
 
 # ── AC-5: Non-snapshot entity sets pass through ───────────────────
@@ -77,9 +71,7 @@ def test_ac5_non_snapshot_passthrough() -> None:
     """AC-5: Shared fn returns None for non-snapshot entity sets."""
     from ado_odata_async.query._apply import _check_snapshot_groupby  # type: ignore[import-untyped]
 
-    result = _check_snapshot_groupby(
-        entity_set="WorkItems", apply_value=""
-    )
+    result = _check_snapshot_groupby(entity_set="WorkItems", apply_value="")
     assert result is None
 
 
@@ -143,7 +135,10 @@ def test_ac7_regex_appears_exactly_once() -> None:
     import sys
 
     result = subprocess.run(
-        [sys.executable, "-c", """
+        [
+            sys.executable,
+            "-c",
+            """
 import re, os
 count = 0
 for root, dirs, files in os.walk("src"):
@@ -158,7 +153,8 @@ for root, dirs, files in os.walk("src"):
                 content
             ))
 print(count)
-"""],
+""",
+        ],
         capture_output=True,
         text=True,
         cwd="/workspaces/odata-python-wrapper",

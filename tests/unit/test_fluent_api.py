@@ -43,12 +43,7 @@ def test_ac1_empty_builder() -> None:
 
 
 def test_ac2_serialization() -> None:
-    builder = (
-        QueryBuilder()
-        .filter(Filter.eq("State", "Active"))
-        .select("Title", "State")
-        .top(10)
-    )
+    builder = QueryBuilder().filter(Filter.eq("State", "Active")).select("Title", "State").top(10)
     expected = "$filter=State%20eq%20%27Active%27&$select=Title%2CState&$top=10"
     assert str(builder) == expected
 
