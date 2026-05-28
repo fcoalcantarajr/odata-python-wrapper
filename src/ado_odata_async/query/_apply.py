@@ -279,7 +279,7 @@ def _check_snapshot_groupby(entity_set: str, apply_value: str) -> None:
 
     import re
 
-    m = re.search(r"groupby\(\(([^)]+)\)\)", apply_value)
+    m = re.search(r"groupby\(\(([^)]+)\)", apply_value)
     if m:
         fields = [f.strip() for f in m.group(1).split(",")]
         if required in fields:

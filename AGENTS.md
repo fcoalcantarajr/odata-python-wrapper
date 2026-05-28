@@ -8,7 +8,7 @@ Lido pelo opencode no início de cada sessão. Curto, estável, verificável.
 ## STACK (PIN)
 
 - Python **3.12** com **`uv`** (NUNCA `pip` direto, NUNCA `python` direto — use `uv run`).
-- `aiohttp>=3.13`, `pydantic>=2.8` (frozen+strict), `tenacity>=9.0`, `python-dateutil`, `yarl`.
+- `aiohttp>=3.13`, `pydantic>=2.8` (frozen+strict), `tenacity>=9.0`, `yarl`.
 - `pytest>=8`, `pytest-asyncio>=0.24`, `aioresponses>=0.7`, `hypothesis>=6.112`, `pytest-cov`.
 - `ruff>=0.6`, `mypy>=1.11 --strict`, `pre-commit>=4.0`.
 - OData **`v4.0-preview`** — endpoint `_odata/v4.0-preview/` (ADR-001).
@@ -73,9 +73,6 @@ Nenhum passo é pulado. TEST_RED VEM ANTES DO IMPL_GREEN. SEMPRE.
 ---
 
 ## Audit.sh Enforcement Notes
-
-**HR-13 (WorkItemSnapshot groupby)**:  
-HR-13 validation is enforced **by code** (`_check_snapshot_groupby()` in `src/ado_odata_async/query/_apply.py`) at query serialization time. See function docstring for detailed rationale. Violations fail immediately with a descriptive error, preventing silent bugs at the API level.
 
 **Other code-only HRs** (HR-9, HR-11, HR-12, HR-16, HR-19): Enforced at code level; `audit.sh` is a first-line gate for easy-to-catch patterns, not exhaustive OData domain validation.
 
