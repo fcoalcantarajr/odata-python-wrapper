@@ -1,9 +1,7 @@
-"""RED-phase tests for SPEC-003 retry-tenacity — with_retry decorator.
+"""Tests for SPEC-003 retry-tenacity — with_retry decorator.
 
-All 7 tests MUST fail (RED) because with_retry() in retry.py currently raises
-NotImplementedError (or does not accept configuration kwargs yet).
+GREEN (was RED phase; with_retry implemented).
 
-After SPEC-003 implementation these tests will turn GREEN:
   - AC-1: TransientError retries with backoff+jitter, succeeds on retry
   - AC-2: RateLimitError capped at 3 attempts regardless of max_attempts
   - AC-3: AuthenticationError NEVER retried (HR-15)
@@ -30,12 +28,7 @@ from ado_odata_async.retry import with_retry
 
 @pytest.mark.asyncio
 async def test_ac1_transient_retry_success_after_retries() -> None:
-    """AC-1: TransientError triggers retry — succeeds on 3rd attempt.
-
-    Current stub raises NotImplementedError → RED.
-    After impl: fn fails with TransientError on calls 1 and 2,
-    succeeds on call 3 → returns "ok", call_count == 3.
-    """
+    """AC-1: TransientError triggers retry — succeeds on 3rd attempt."""
     call_count = 0
 
     async def fn() -> str:
@@ -46,7 +39,6 @@ async def test_ac1_transient_retry_success_after_retries() -> None:
         return "ok"
 
     wrapped = with_retry(fn)
-    # RED: with_retry raises NotImplementedError
     result = await wrapped()
 
     assert result == "ok"
@@ -77,12 +69,7 @@ async def test_ac2_ratelimit_uses_same_max_attempts() -> None:
 
 @pytest.mark.asyncio
 async def test_ac3_auth_error_never_retried() -> None:
-    """AC-3: AuthenticationError NEVER retried (HR-15).
-
-    Current stub raises NotImplementedError → RED.
-    After impl: AuthenticationError propagates immediately,
-    fn called exactly 1 time (zero retries).
-    """
+    """AC-3: AuthenticationError NEVER retried (HR-15)."""
     call_count = 0
 
     async def fn() -> str:
@@ -91,7 +78,6 @@ async def test_ac3_auth_error_never_retried() -> None:
         raise AuthenticationError("Unauthorized")
 
     wrapped = with_retry(fn)
-    # RED: NotImplementedError
 
     with pytest.raises(AuthenticationError):
         await wrapped()
@@ -101,12 +87,7 @@ async def test_ac3_auth_error_never_retried() -> None:
 
 @pytest.mark.asyncio
 async def test_ac4_bad_request_never_retried() -> None:
-    """AC-4: BadRequestError NEVER retried.
-
-    Current stub raises NotImplementedError → RED.
-    After impl: BadRequestError propagates immediately,
-    fn called exactly 1 time (zero retries).
-    """
+    """AC-4: BadRequestError NEVER retried."""
     call_count = 0
 
     async def fn() -> str:
@@ -115,7 +96,6 @@ async def test_ac4_bad_request_never_retried() -> None:
         raise BadRequestError("Bad request")
 
     wrapped = with_retry(fn)
-    # RED: NotImplementedError
 
     with pytest.raises(BadRequestError):
         await wrapped()
@@ -125,13 +105,7 @@ async def test_ac4_bad_request_never_retried() -> None:
 
 @pytest.mark.asyncio
 async def test_ac5_max_attempts_propagates_last_exception() -> None:
-    """AC-5: Max retries exceeded propagates the last TransientError (no wrapper).
-
-    Current stub either raises NotImplementedError or TypeError
-    (kwargs not yet accepted) → RED.
-    After impl: fn always raises TransientError, max_attempts=3,
-    the 3rd call's exception message is propagated as-is.
-    """
+    """AC-5: Max retries exceeded propagates the last TransientError (no wrapper)."""
     call_count = 0
 
     async def fn() -> str:
@@ -140,7 +114,6 @@ async def test_ac5_max_attempts_propagates_last_exception() -> None:
         raise TransientError(f"Attempt #{call_count} failed")
 
     wrapped = with_retry(fn, max_attempts=3)
-    # RED: TypeError or NotImplementedError
 
     with pytest.raises(TransientError) as exc_info:
         await wrapped()
@@ -151,13 +124,7 @@ async def test_ac5_max_attempts_propagates_last_exception() -> None:
 
 @pytest.mark.asyncio
 async def test_ac6_configurable_params_respected() -> None:
-    """AC-6: Configurable max_attempts / min_delay / max_delay are respected.
-
-    Current stub either raises NotImplementedError or TypeError
-    (kwargs not yet accepted) → RED.
-    After impl: fn fails 4 times (TransientError), succeeds on 5th,
-    call_count == 5, elapsed time < 1s due to small delays.
-    """
+    """AC-6: Configurable max_attempts / min_delay / max_delay are respected."""
     call_count = 0
 
     async def fn() -> str:
@@ -169,7 +136,6 @@ async def test_ac6_configurable_params_respected() -> None:
 
     t0 = time.monotonic()
     wrapped = with_retry(fn, max_attempts=5, min_delay=0.01, max_delay=0.05)
-    # RED: TypeError or NotImplementedError
     result = await wrapped()
     elapsed = time.monotonic() - t0
 
@@ -180,18 +146,11 @@ async def test_ac6_configurable_params_respected() -> None:
 
 @pytest.mark.asyncio
 async def test_ac7_decorator_preserves_signature() -> None:
-    """AC-7: @with_retry preserves async signature and type hints.
-
-    Current stub raises NotImplementedError at decoration time → RED.
-    After impl: @with_retry returns a wrapper with identical signature,
-    inspect.signature shows `arg: int` param and `str` return annotation.
-    """
+    """AC-7: @with_retry preserves async signature and type hints."""
 
     @with_retry
     async def fetch_data(arg: int) -> str:
         return f"got {arg}"
-
-    # RED: NotImplementedError at decoration time (function never assigned)
 
     from typing import get_type_hints
 

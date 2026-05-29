@@ -1,6 +1,6 @@
-"""Tests for SPEC-010 remaining entities — all tests MUST FAIL initially (RED phase).
+"""Tests for SPEC-010 remaining entities — all tests pass.
 
-Models don't exist yet in src/. All fail with ImportError before impl.
+GREEN (was RED phase; models implemented).
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from pydantic import ValidationError
 def test_ac1_work_item_revisions() -> None:
     """AC-1: WorkItemRevisions has Revision >= 1 and WorkItemId."""
     from ado_odata_async import (
-        WorkItemRevisions,  # type: ignore[import-untyped]  # reason: RED phase
+        WorkItemRevisions,
     )
 
     row = {
@@ -33,7 +33,7 @@ def test_ac1_work_item_revisions() -> None:
 def test_ac1_revision_zero_rejected() -> None:
     """AC-1: Revision=0 raises ValidationError."""
     from ado_odata_async import (
-        WorkItemRevisions,  # type: ignore[import-untyped]  # reason: RED phase
+        WorkItemRevisions,
     )
 
     row = {
@@ -54,7 +54,7 @@ def test_ac1_revision_zero_rejected() -> None:
 def test_ac2_board_snapshot() -> None:
     """AC-2: WorkItemBoardSnapshot has DateSK as int."""
     from ado_odata_async import (
-        WorkItemBoardSnapshot,  # type: ignore[import-untyped]  # reason: RED phase
+        WorkItemBoardSnapshot,
     )
 
     row = {
@@ -79,7 +79,7 @@ def test_ac2_board_snapshot() -> None:
 def test_ac3_iteration() -> None:
     """AC-3: Iteration has Identifier as str (not None)."""
     from ado_odata_async import (
-        Iteration,  # type: ignore[import-untyped]  # reason: RED phase
+        Iteration,
     )
 
     row = {
@@ -95,7 +95,7 @@ def test_ac3_iteration() -> None:
 def test_ac3_identifier_missing_rejected() -> None:
     """AC-3: Missing Identifier raises ValidationError."""
     from ado_odata_async import (
-        Iteration,  # type: ignore[import-untyped]  # reason: RED phase
+        Iteration,
     )
 
     row = {"IterationSK": 1, "IterationName": "Sprint 1"}
@@ -109,7 +109,7 @@ def test_ac3_identifier_missing_rejected() -> None:
 def test_ac4_project() -> None:
     """AC-4: Project has ProjectSK (int) and ProjectName (str)."""
     from ado_odata_async import (
-        Project,  # type: ignore[import-untyped]  # reason: RED phase
+        Project,
     )
 
     row = {"ProjectSK": 1, "ProjectId": "guid-123", "ProjectName": "My Project"}
@@ -125,7 +125,7 @@ def test_ac4_project() -> None:
 def test_ac5_team() -> None:
     """AC-5: Team has TeamSK (int) and TeamName (str)."""
     from ado_odata_async import (
-        Team,  # type: ignore[import-untyped]  # reason: RED phase
+        Team,
     )
 
     row = {"TeamSK": 1, "TeamId": "guid-456", "TeamName": "My Team"}
@@ -151,7 +151,7 @@ def test_ac6_all_frozen_strict() -> None:
         WorkItemLink,
         WorkItemRevisions,
         WorkItemType,
-    )  # type: ignore[import-untyped]  # reason: RED phase
+    )
 
     models = [
         WorkItemRevisions,
@@ -179,7 +179,7 @@ def test_ac6_all_frozen_strict() -> None:
 def test_ac7_board_snapshot_with_description() -> None:
     """AC-7: WorkItemBoardSnapshotWithDescription includes Description."""
     from ado_odata_async import (
-        WorkItemBoardSnapshotWithDescription,  # type: ignore[import-untyped]  # reason: RED phase
+        WorkItemBoardSnapshotWithDescription,
     )
 
     row = {
@@ -204,7 +204,7 @@ def test_ac7_board_snapshot_with_description() -> None:
 def test_ac8_area() -> None:
     """AC-8: Area has AreaSK (int) and AreaPath (str)."""
     from ado_odata_async import (
-        Area,  # type: ignore[import-untyped]  # reason: RED phase
+        Area,
     )
 
     row = {
@@ -225,7 +225,7 @@ def test_ac8_area() -> None:
 def test_ac9_date() -> None:
     """AC-9: Date has DateSK (int YYYYMMDD) and Year (int)."""
     from ado_odata_async import (
-        Date,  # type: ignore[import-untyped]  # reason: RED phase
+        Date,
     )
 
     row = {
@@ -251,7 +251,7 @@ def test_ac9_date() -> None:
 def test_ac10_user() -> None:
     """AC-10: User has UserSK (int) and UserName (str)."""
     from ado_odata_async import (
-        User,  # type: ignore[import-untyped]  # reason: RED phase
+        User,
     )
 
     row = {"UserSK": 1, "UserId": "guid-abc", "UserName": "user@example.com"}
@@ -266,7 +266,7 @@ def test_ac10_user() -> None:
 def test_ac11_work_item_type() -> None:
     """AC-11: WorkItemType has WorkItemTypeSK (int) and WorkItemTypeName (str)."""
     from ado_odata_async import (
-        WorkItemType,  # type: ignore[import-untyped]  # reason: RED phase
+        WorkItemType,
     )
 
     row = {"WorkItemTypeSK": 1, "WorkItemTypeName": "Bug"}
@@ -281,7 +281,7 @@ def test_ac11_work_item_type() -> None:
 def test_ac12_work_item_link() -> None:
     """AC-12: WorkItemLink has SourceWorkItemId (int) and LinkType (str)."""
     from ado_odata_async import (
-        WorkItemLink,  # type: ignore[import-untyped]  # reason: RED phase
+        WorkItemLink,
     )
 
     row = {

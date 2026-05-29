@@ -1,7 +1,6 @@
 """Tests for SPEC-009 WorkItem entity — frozen+strict Pydantic model.
 
-All tests MUST FAIL (RED phase) because ``WorkItem`` model and
-``client.get_workitem`` method don't exist yet in ``src/``.
+All tests pass; ``WorkItem`` model and ``client.get_workitem`` are implemented.
 """
 
 from __future__ import annotations

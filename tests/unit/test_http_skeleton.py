@@ -1,6 +1,6 @@
 """Tests for SPEC-001 HTTP skeleton — single session, v4.0-preview, empty-user BasicAuth.
 
-All tests must FAIL (RED phase) against current stub code in src/.
+GREEN (was RED phase; implementation done).
 """
 
 from __future__ import annotations

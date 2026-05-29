@@ -1,10 +1,6 @@
-"""RED-phase tests for SR-003: Honor Retry-After header on 429.
+"""Tests for SR-003: Honor Retry-After header on 429.
 
-All tests MUST fail (RED) because RateLimitError currently has no
-retry_after attribute and the retry mechanism uses static exponential
-jitter regardless of Retry-After.
-
-After SR-003 implementation these tests will turn GREEN.
+GREEN (was RED phase; retry_after attribute and wait function implemented).
 """
 
 from __future__ import annotations
@@ -18,11 +14,7 @@ from ado_odata_async.exceptions import RateLimitError, TransientError
 
 
 def test_ac1_rate_limit_error_stores_retry_after() -> None:
-    """AC-1: RateLimitError accepts retry_after and exposes it as attribute.
-
-    RED: RateLimitError __init__ currently takes no retry_after param.
-    """
-    # RED: TypeError: RateLimitError.__init__() got an unexpected keyword argument 'retry_after'
+    """AC-1: RateLimitError accepts retry_after and exposes it as attribute."""
     exc = RateLimitError("HTTP 429: Rate limit. Retry-After: 60s", retry_after=60.0)
 
     assert exc.retry_after == 60.0
@@ -78,10 +70,7 @@ def test_ac3_wait_fn_fallback_jitter() -> None:
 
 @pytest.mark.asyncio
 async def test_ac4_parse_response_passes_retry_after() -> None:
-    """AC-4: parse_response raises RateLimitError with retry_after from header.
-
-    RED: _http.py currently raises RateLimitError without retry_after attribute.
-    """
+    """AC-4: parse_response raises RateLimitError with retry_after from header."""
     from unittest.mock import MagicMock
 
     from ado_odata_async._http import parse_response

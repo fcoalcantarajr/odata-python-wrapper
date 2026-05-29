@@ -1,7 +1,6 @@
-"""RED-phase tests for SPEC-005 Filter DSL builder — pure expression tree.
+"""Tests for SPEC-005 Filter DSL builder — pure expression tree.
 
-All 10 tests MUST fail (RED) because `ado_odata_async.query._filter.Filter`
-does not exist yet. The import itself will raise `ImportError`.
+GREEN (was RED phase; Filter implemented).
 
 No async, no aiohttp, no fixtures needed — these are pure sync string
 assertions against `Filter.build()`.

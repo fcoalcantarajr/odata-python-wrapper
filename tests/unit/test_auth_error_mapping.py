@@ -1,8 +1,6 @@
 """Tests for SPEC-002 auth-error-mapping — parse_response error classification.
 
-All tests MUST fail (RED phase) against current stub code in src/.
-parse_response() raises NotImplementedError, but tests expect the real exception types
-defined in exceptions.py.
+GREEN (was RED phase; parse_response implemented).
 """
 
 from __future__ import annotations

@@ -1,7 +1,6 @@
 """Tests for AS-102: Relax WorkItemType to accept custom work item types.
 
-These tests should FAIL (RED) with the current Literal[5] type constraint
-and PASS (GREEN) after changing to str + logger.warning.
+GREEN (was RED phase; constraint relaxed to str).
 """
 
 from __future__ import annotations

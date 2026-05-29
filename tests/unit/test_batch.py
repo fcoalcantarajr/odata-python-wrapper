@@ -1,7 +1,6 @@
-"""RED-phase tests for SPEC-008 POST $batch URL length switch per HR-10.
+"""Tests for SPEC-008 POST $batch URL length switch per HR-10.
 
-All 5 tests MUST fail (RED) because ``ado_odata_async.query._batch``
-does not exist yet. The import itself will raise ``ImportError``.
+GREEN (was RED phase; maybe_batch implemented).
 
 Pure sync tests — no async, no fixtures needed, no mocking.
 

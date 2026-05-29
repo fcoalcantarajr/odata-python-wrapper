@@ -1,7 +1,6 @@
-"""RED-phase tests for SPEC-004 pagination — client.paginate() async iterator.
+"""Tests for SPEC-004 pagination — client.paginate() async iterator.
 
-All 5 tests MUST fail (RED) because client.paginate() does not exist.
-After SPEC-004 implementation these tests will turn GREEN.
+GREEN (was RED phase; paginate implemented).
 
 Each test maps to one AC from specs/004-pagination.md:
   - AC-1: $skip advances across 3 pages, 25 total items

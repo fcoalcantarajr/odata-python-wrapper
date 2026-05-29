@@ -1,10 +1,6 @@
-"""RED-phase tests for SR-004: HR-13 validation dedup.
+"""Tests for SR-004: HR-13 validation dedup.
 
-All tests MUST fail (RED) because the shared _check_snapshot_groupby()
-function does not exist yet, and the three original call sites have not
-been refactored to delegate to it.
-
-After SR-004 implementation these tests will turn GREEN.
+GREEN (was RED phase; shared _check_snapshot_groupby implemented).
 """
 
 from __future__ import annotations
@@ -18,13 +14,13 @@ from ado_odata_async.query._apply import Apply
 
 def test_ac1_valid_workitem_snapshot() -> None:
     """AC-1: Shared fn returns None for WorkItemSnapshot with valid groupby((DateSK))."""
-    # This import will fail until the shared function exists
+    # Import function (should succeed)
     try:
         from ado_odata_async.query._apply import (
-            _check_snapshot_groupby,  # type: ignore[import-untyped]
+            _check_snapshot_groupby,
         )
     except ImportError:
-        pytest.fail("_check_snapshot_groupby not yet implemented — RED phase")
+        pytest.fail("import failed (function should exist)")
     result = _check_snapshot_groupby(entity_set="WorkItemSnapshot", apply_value="groupby((DateSK))")
     assert result is None
 
@@ -34,7 +30,7 @@ def test_ac1_valid_workitem_snapshot() -> None:
 
 def test_ac2_missing_datesk() -> None:
     """AC-2: Shared fn raises ValueError for WorkItemSnapshot without DateSK."""
-    from ado_odata_async.query._apply import _check_snapshot_groupby  # type: ignore[import-untyped]
+    from ado_odata_async.query._apply import _check_snapshot_groupby
 
     with pytest.raises(ValueError, match="DateSK"):
         _check_snapshot_groupby(entity_set="WorkItemSnapshot", apply_value="groupby((State))")
@@ -45,7 +41,7 @@ def test_ac2_missing_datesk() -> None:
 
 def test_ac3_valid_board_snapshot() -> None:
     """AC-3: Shared fn returns None for WorkItemBoardSnapshot with valid groupby((DateValue))."""
-    from ado_odata_async.query._apply import _check_snapshot_groupby  # type: ignore[import-untyped]
+    from ado_odata_async.query._apply import _check_snapshot_groupby
 
     result = _check_snapshot_groupby(
         entity_set="WorkItemBoardSnapshot", apply_value="groupby((DateValue))"
@@ -58,7 +54,7 @@ def test_ac3_valid_board_snapshot() -> None:
 
 def test_ac4_missing_datevalue() -> None:
     """AC-4: Shared fn raises ValueError for WorkItemBoardSnapshot without DateValue."""
-    from ado_odata_async.query._apply import _check_snapshot_groupby  # type: ignore[import-untyped]
+    from ado_odata_async.query._apply import _check_snapshot_groupby
 
     with pytest.raises(ValueError, match="DateValue"):
         _check_snapshot_groupby(entity_set="WorkItemBoardSnapshot", apply_value="groupby((State))")
@@ -69,7 +65,7 @@ def test_ac4_missing_datevalue() -> None:
 
 def test_ac5_non_snapshot_passthrough() -> None:
     """AC-5: Shared fn returns None for non-snapshot entity sets."""
-    from ado_odata_async.query._apply import _check_snapshot_groupby  # type: ignore[import-untyped]
+    from ado_odata_async.query._apply import _check_snapshot_groupby
 
     result = _check_snapshot_groupby(entity_set="WorkItems", apply_value="")
     assert result is None
@@ -82,7 +78,7 @@ def test_ac5_non_snapshot_passthrough() -> None:
 async def test_ac6_apply_validate_delegates() -> None:
     """AC-6: Apply.validate() delegates to shared fn — valid case does not raise."""
     a = Apply(entity_type="WorkItemSnapshot").groupby("DateSK")
-    # RED: Apply.validate() still has inline logic, not delegation
+    # Apply.validate() delegates to shared fn
     a.validate()  # Should not raise
 
 
@@ -104,7 +100,7 @@ async def test_ac6_builder_apply_delegates() -> None:
     client = MagicMock()
     b = QueryBuilder(client=client, entity_set="WorkItemSnapshot")
     a = Apply.groupby("DateSK")
-    # RED: apply() still has inline regex, won't delegate
+    # apply() delegates to shared fn
     result = b.apply(a)
     assert result._options.get("$apply") is not None
 

@@ -1,9 +1,6 @@
-"""RED-phase tests for SR-011: Configurable ClientSession timeout.
+"""Tests for SR-011: Configurable ClientSession timeout.
 
-All tests MUST fail (RED) because AdoODataClient.__init__ currently
-accepts no 'timeout' kwarg and has no _timeout attribute.
-
-After SR-011 implementation these tests will turn GREEN.
+GREEN (was RED phase; timeout kwarg implemented).
 """
 
 from __future__ import annotations
@@ -18,12 +15,8 @@ from ado_odata_async import AdoODataClient
 
 @pytest.mark.asyncio
 async def test_ac1_default_timeout_is_30s_total(fake_pat: str) -> None:
-    """AC-1: When no timeout arg is provided, default total is 30s.
-
-    RED: AdoODataClient.__init__ has no 'timeout' kwarg.
-    """
+    """AC-1: When no timeout arg is provided, default total is 30s."""
     async with AdoODataClient(org="o", project="p", pat=fake_pat) as client:
-        # AttributeError: 'AdoODataClient' has no attribute '_timeout'
         assert client._timeout.total == 30.0
 
 
@@ -32,10 +25,7 @@ async def test_ac1_default_timeout_is_30s_total(fake_pat: str) -> None:
 
 @pytest.mark.asyncio
 async def test_ac2_connect_timeout_is_10s(fake_pat: str) -> None:
-    """AC-2: When no timeout arg is provided, default connect is 10s.
-
-    RED: AdoODataClient.__init__ has no 'timeout' kwarg.
-    """
+    """AC-2: When no timeout arg is provided, default connect is 10s."""
     async with AdoODataClient(org="o", project="p", pat=fake_pat) as client:
         assert client._timeout.connect == 10.0
 
@@ -45,12 +35,8 @@ async def test_ac2_connect_timeout_is_10s(fake_pat: str) -> None:
 
 @pytest.mark.asyncio
 async def test_ac3_custom_timeout_via_constructor(fake_pat: str) -> None:
-    """AC-3: Custom timeout passed via constructor is stored.
-
-    RED: AdoODataClient.__init__ has no 'timeout' kwarg — TypeError.
-    """
+    """AC-3: Custom timeout passed via constructor is stored."""
     t = aiohttp.ClientTimeout(total=5.0, connect=2.0)
-    # TypeError: AdoODataClient.__init__() got an unexpected keyword argument 'timeout'
     client = AdoODataClient(org="o", project="p", pat=fake_pat, timeout=t)
     async with client:
         assert client._timeout is t
@@ -61,10 +47,7 @@ async def test_ac3_custom_timeout_via_constructor(fake_pat: str) -> None:
 
 @pytest.mark.asyncio
 async def test_ac4_timeout_stored_and_accessible(fake_pat: str) -> None:
-    """AC-4: Custom timeout is stored and accessible after construction.
-
-    RED: AdoODataClient.__init__ has no 'timeout' kwarg — TypeError.
-    """
+    """AC-4: Custom timeout is stored and accessible after construction."""
     t = aiohttp.ClientTimeout(total=5.0, connect=2.0)
     client = AdoODataClient(org="o", project="p", pat=fake_pat, timeout=t)
     async with client:
@@ -80,10 +63,7 @@ async def test_ac4_timeout_stored_and_accessible(fake_pat: str) -> None:
 async def test_ac4b_backward_compatible_batch_threshold(
     fake_pat: str,
 ) -> None:
-    """AC-4b: Existing batch_threshold kwarg works alongside timeout.
-
-    RED: AdoODataClient.__init__ has no 'timeout' kwarg — TypeError.
-    """
+    """AC-4b: Existing batch_threshold kwarg works alongside timeout."""
     client = AdoODataClient(org="o", project="p", pat=fake_pat, batch_threshold=5000)
     async with client:
         assert client._batch_threshold == 5000
@@ -97,10 +77,7 @@ async def test_ac4b_backward_compatible_batch_threshold(
 async def test_ac5_single_clientsession_reuse_preserved(
     fake_pat: str,
 ) -> None:
-    """AC-5: Session id is stable across multiple requests (HR-7 guard).
-
-    RED: AdoODataClient.__init__ has no 'timeout' kwarg — TypeError.
-    """
+    """AC-5: Session id is stable across multiple requests (HR-7 guard)."""
     from aioresponses import aioresponses
 
     t = aiohttp.ClientTimeout(total=5.0)
