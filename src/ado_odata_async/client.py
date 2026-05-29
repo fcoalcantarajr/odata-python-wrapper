@@ -37,11 +37,22 @@ class AdoODataClient:
     ClientSession creation/close (HR-7) and propagates cancellation cleanly.
     """
 
-    def __init__(self, *, org: str, project: str, pat: str, batch_threshold: int = 3000) -> None:
+    def __init__(
+        self,
+        *,
+        org: str,
+        project: str,
+        pat: str,
+        batch_threshold: int = 3000,
+        timeout: aiohttp.ClientTimeout | None = None,
+    ) -> None:
         self._org = org
         self._project = project
         self._pat = pat
         self._batch_threshold = batch_threshold
+        self._timeout: aiohttp.ClientTimeout = timeout or aiohttp.ClientTimeout(
+            total=30.0, connect=10.0
+        )
         self._session: aiohttp.ClientSession | None = None
         self._has_entered_once: bool = False
 
@@ -49,7 +60,9 @@ class AdoODataClient:
         if self._has_entered_once:
             raise RuntimeError("re-entry forbidden — single ClientSession per client (HR-7)")
         self._has_entered_once = True
-        self._session = aiohttp.ClientSession(auth=build_basic_auth(self._pat))
+        self._session = aiohttp.ClientSession(
+            auth=build_basic_auth(self._pat), timeout=self._timeout
+        )
         logger.debug("client entered — pat=%s odata=%s", mask_pat(self._pat), ODATA_VERSION)
         return self
 
