@@ -24,7 +24,7 @@ async def parse_response(resp: aiohttp.ClientResponse) -> dict[str, Any]:
       - 203 + text/html → AuthenticationError (PAT inválido, não retry)
       - 401            → AuthenticationError (não retry)
       - 400            → BadRequestError (não retry)
-      - 429            → RateLimitError (retry cap 3)
+      - 429            → RateLimitError (honors Retry-After header)
       - 5xx            → TransientError (retry com backoff)
     """
     logger.debug("Parsing response: HTTP %s %s", resp.status, resp.content_type)
@@ -54,14 +54,16 @@ async def parse_response(resp: aiohttp.ClientResponse) -> dict[str, Any]:
         raise BadRequestError(msg)
 
     if resp.status == 429:
-        raw = resp.headers.get("Retry-After", "0")
+        raw = resp.headers.get("Retry-After")
         try:
-            retry_after = float(raw)
+            retry_after = float(raw) if raw is not None else None
         except ValueError:
             logger.debug("Retry-After header malformed or non-numeric: %r, using None", raw)
             retry_after = None
         raise RateLimitError(
-            f"HTTP 429: Rate limit. Retry-After: {raw}s",
+            f"HTTP 429: Rate limit. Retry-After: {raw}s"
+            if raw is not None
+            else "HTTP 429: Rate limit",
             retry_after=retry_after,
         )
 
