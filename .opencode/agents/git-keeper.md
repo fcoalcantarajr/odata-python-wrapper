@@ -1,11 +1,10 @@
 ---
-model: openrouter/z-ai/glm-4.5-air:free
+model: openrouter/openrouter/free
 fallback_models:
   - opencode/deepseek-v4-flash-free
   - openrouter/qwen/qwen3-coder:free
 mode: subagent
 description: Único agente autorizado a tocar git no repo. Executa o 4-stage commit gate (diff scope sanity, pytest GREEN, static gates ruff+mypy+audit, AC coverage) antes de cada commit. Conventional Commits (`feat|fix|chore|docs|test|refactor|perf|ci`). Sync via `git pull --rebase --autostash`. Usar para `/commit` e `/sync`.
-temperature: 0.0
 permission:
   read: allow
   edit:
