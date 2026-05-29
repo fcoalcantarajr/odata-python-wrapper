@@ -1,9 +1,10 @@
 """Tests for AS-101: Fix snapshot groupby regex to match nested aggregate expressions.
 
-These tests should FAIL with the current regex and PASS after the fix.
-The bug: _apply.py:282 regex ``groupby((([^)]+)))`` -- [^)]+ cannot match ) chars,
-so the trailing )) is unreachable for any input with nested parens like
-groupby((DateSK),aggregate(...)).
+GREEN (was RED phase; regex fixed in _apply.py:282).
+
+The previous bug: regex ``groupby((([^)]+)))`` -- [^)]+ could not match ) chars,
+so the trailing )) was unreachable for nested parens like
+groupby((DateSK),aggregate(...)). The fix removed the trailing backslash-paren.
 """
 
 from __future__ import annotations
@@ -29,8 +30,7 @@ NON_SNAPSHOT = "WorkItems"
 # ===================================================================
 def test_ac1_nested_groupby_aggregate_passes() -> None:
     """AC-1: groupby((DateSK),aggregate(Count...)) should not raise."""
-    # With the buggy regex, this raises ValueError — the \) is unreachable.
-    # The fix makes this pass.
+    # The fix (removed trailing \)) allows nested aggregate to match correctly.
     _check_snapshot_groupby(
         SNAPSHOT,
         "groupby((DateSK),aggregate(Count with sum as Total))",
