@@ -56,6 +56,26 @@ permission:
 - Para cada AC do spec, existe ao menos um teste cujo nome ou docstring referencia o AC.
 - `grep -rn 'AC-' tests/unit/test_<slug>.py` retorna match para cada AC do spec.
 
+## Fail-fast handoff (HR-18 resilience)
+
+**On ANY failure** during a git operation (rate limit, auth, network, hang, non-zero exit):
+
+1. **Transient failure** (rate limit or network):
+   - 1 short retry only (no exponential backoff, no circuit breaker).
+   - If still fails after 1 retry → proceed to step 2.
+
+2. **Non-transient failure** (auth error, deterministic non-zero exit):
+   - Handoff immediately on 1st occurrence (do NOT retry).
+   - Proceed to step 3.
+
+3. **2nd failure of any kind** (whether transient or not):
+   - git-keeper stops execution.
+   - Emits `[GIT_HANDOFF: <cause>]` (e.g., `[GIT_HANDOFF: auth_failed_twice]`).
+   - **Reassigns the requested git task to PRIMARY/sisyphus** (orchestrator layer, outside `.opencode/agents/`).
+   - Sisyphus re-enqueues the `[GIT_REQUEST]` or executes the single validated commit directly, with 4 gates GREEN (mandatory).
+   - **Never delegates git to another subagent** (HR-17 + audit grep prevent it; handoff is always to orchestrator).
+   - No long backoff, no circuit-breaker loop that parks the project, no infinite retry.
+
 ## Commit message
 
 Conventional Commit, **uma linha** + corpo opcional:
