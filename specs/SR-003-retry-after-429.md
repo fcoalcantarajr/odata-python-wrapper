@@ -5,7 +5,7 @@
 
 - id: SR-003
 - slug: retry-after-429
-- status: DRAFT
+- status: APPROVED
 - created: 2026-05-27
 - owner: sisyphus
 - findings-addressed: SR-003, SR-016

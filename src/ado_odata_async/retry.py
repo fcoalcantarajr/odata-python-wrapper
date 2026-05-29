@@ -46,25 +46,16 @@ def _make_wait(
     return _wait
 
 
-def _make_stop(max_attempts: int) -> Callable[[RetryCallState], bool]:
+def _make_stop(max_attempts: int = 5) -> Callable[[RetryCallState], bool]:
     """Return a stop function for the given *max_attempts*.
 
-    Stops when *attempt_number* >= *max_attempts*.  For
-    ``RateLimitError``, stops earlier at ``min(max_attempts, 3)``
-    attempts (SR-003 AC-2).
+    Stops when *attempt_number* >= *max_attempts*.  All exception types
+    (including ``RateLimitError``) use the same limit — no early-stop
+    branch (SR-003 AC-6).
     """
-    rate_limit_max = min(max_attempts, 3)
 
     def _stop(state: RetryCallState) -> bool:
-        if state.attempt_number >= max_attempts:
-            return True
-        if state.attempt_number >= rate_limit_max:
-            outcome = state.outcome
-            if outcome is not None:
-                exc = outcome.exception()
-                if isinstance(exc, RateLimitError):
-                    return True
-        return False
+        return state.attempt_number >= max_attempts
 
     return _stop
 

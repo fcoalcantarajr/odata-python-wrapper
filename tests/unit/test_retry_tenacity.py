@@ -54,12 +54,11 @@ async def test_ac1_transient_retry_success_after_retries() -> None:
 
 
 @pytest.mark.asyncio
-async def test_ac2_ratelimit_capped_at_three() -> None:
-    """AC-2: RateLimitError capped at 3 attempts even if max_attempts=5.
+async def test_ac2_ratelimit_uses_same_max_attempts() -> None:
+    """AC-2: RateLimitError uses the same max_attempts as other exceptions (SR-003).
 
-    Current stub either raises NotImplementedError or TypeError
-    (kwargs not yet accepted) → RED.
-    After impl: RateLimitError always raised, fn called exactly 3 times.
+    SR-003 simplified _make_stop — no early-stop for RateLimitError.
+    With max_attempts=5, fn is called exactly 5 times.
     """
     call_count = 0
 
@@ -69,12 +68,11 @@ async def test_ac2_ratelimit_capped_at_three() -> None:
         raise RateLimitError("Rate limited")
 
     wrapped = with_retry(fn, max_attempts=5)
-    # RED: TypeError (kwargs not supported) or NotImplementedError
 
     with pytest.raises(RateLimitError):
         await wrapped()
 
-    assert call_count == 3
+    assert call_count == 5
 
 
 @pytest.mark.asyncio
