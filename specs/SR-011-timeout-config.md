@@ -84,10 +84,11 @@ Média: 9.3/10
 
 ## Test plan
 
-- AC-1 → `tests/unit/test_sr_011_timeout.py::test_ac1_custom_timeout_passed`
-- AC-2 → `tests/unit/test_sr_011_timeout.py::test_ac2_default_timeout_applied`
-- AC-3 → `tests/unit/test_sr_011_timeout.py::test_ac3_timeout_attribute_exists`
-- AC-4 → `tests/unit/test_sr_011_timeout.py::test_ac4_backward_compatible`
+- AC-1 → `tests/unit/test_sr_011_timeout.py::test_ac1_default_timeout_is_30s_total`
+- AC-2 → `tests/unit/test_sr_011_timeout.py::test_ac2_connect_timeout_is_10s`
+- AC-3 → `tests/unit/test_sr_011_timeout.py::test_ac3_custom_timeout_via_constructor`
+- AC-4 → `tests/unit/test_sr_011_timeout.py::test_ac4_timeout_stored_and_accessible`
+- AC-5 → `tests/unit/test_sr_011_timeout.py::test_ac5_single_clientsession_reuse_preserved`
 
 ## Hard Rules
 

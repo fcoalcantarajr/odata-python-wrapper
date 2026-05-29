@@ -73,6 +73,23 @@ async def test_ac4_timeout_stored_and_accessible(fake_pat: str) -> None:
         assert client._timeout.connect == 2.0
 
 
+# ── AC-4b: Backward compatible — batch_threshold still works ───────
+
+
+@pytest.mark.asyncio
+async def test_ac4b_backward_compatible_batch_threshold(
+    fake_pat: str,
+) -> None:
+    """AC-4b: Existing batch_threshold kwarg works alongside timeout.
+
+    RED: AdoODataClient.__init__ has no 'timeout' kwarg — TypeError.
+    """
+    client = AdoODataClient(org="o", project="p", pat=fake_pat, batch_threshold=5000)
+    async with client:
+        assert client._batch_threshold == 5000
+        assert client._timeout.total == 30.0
+
+
 # ── AC-5: Single ClientSession reuse preserved (HR-7) ──────────────
 
 
