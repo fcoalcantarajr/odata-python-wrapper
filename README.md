@@ -1,42 +1,47 @@
 # ado-odata-async
 
-Cliente **Python assíncrono** para o **Azure DevOps Analytics OData** — focado em dados de Work Tracking (Boards).
+A Python async client for Azure DevOps Analytics OData. It queries work items, history, and flow metrics from Azure Boards using the OData API — no REST boilerplate, no `requests`, no dict gymnastics.
 
 ---
 
-## Sobre
+## What is this?
 
-O `ado-odata-async` é uma biblioteca que permite consultar dados do Azure Boards (work items, histórico, métricas de fluxo) usando a API Analytics OData do Azure DevOps. Ela é **async-first** (aiohttp, não bloqueia rede), **type-safe** (Pydantic frozen + strict), e **OData-aware** (8 gotchas do Azure Analytics resolvidas na biblioteca) — mesmo se você nunca ouviu falar de OData ou async/await.
-
-Tudo o que você precisa:
-- Um PAT (Personal Access Token) com permissão de leitura
-- Python 3.12 ou superior
-- Dois minutos para instalar e rodar
+This library lets you pull data from Azure Boards (work items, revision history, flow metrics) using the Analytics OData API. If you need cycle time, throughput, or WIP from Azure DevOps, this wraps the query layer so you write Python instead of raw OData URLs.
 
 ---
 
-## Por que existe?
+## Start here
 
-A Microsoft mantém o pacote [`azure-devops-python-api`](https://github.com/microsoft/azure-devops-python-api), que é completo mas:
+New to this library? Follow this path:
 
-| Problema | Como o ado-odata-async resolve |
-|---|---|
-| Usa `requests` (síncrono) | Totalmente `async` com `aiohttp` — não bloqueia enquanto espera a rede |
-| Dados genéricos (`dict`) | Retorna modelos Pydantic congelados (`WorkItem`, `WorkItemRevisions`, etc.) com tipos estritos |
-| Foco em REST API (Azure DevOps) | Foco exclusivo em **Analytics OData** — a fonte certa para métricas de fluxo |
-| Query string montada na mão | QueryBuilder fluente com autocomplete e serialização garantida |
-| Erros genéricos | Exceções tipadas: `AuthenticationError`, `BadRequestError`, `TransientError`, `RateLimitError` |
-
-Se você precisa de **cycle time**, **throughput**, **WIP** ou qualquer métrica de fluxo a partir do Azure Boards, esta biblioteca é para você.
+1. **[`docs/getting-started.md`](docs/getting-started.md)** — install, create a PAT, configure `.env`, run your first query (5 min).
+2. **[`docs/concepts.md`](docs/concepts.md)** — what OData is, WorkItems vs Revisions vs Snapshot, flow metrics, async/await basics.
+3. **[`docs/cookbook.md`](docs/cookbook.md)** — 8 practical recipes: filter, paginate, cycle time, CSV export, error handling.
+4. **[`docs/glossary.md`](docs/glossary.md)** — alphabetical reference of every technical term used here.
+5. **[`docs/troubleshooting.md`](docs/troubleshooting.md)** — symptom → cause → solution for common errors (401, 400, 203, etc.).
 
 ---
 
-## Início rápido
+## Docs index
 
-> ⏱ **5 minutos** do clone ao primeiro resultado.
+| Doc | What's inside | Open this when… |
+|---|---|---|
+| [getting-started.md](docs/getting-started.md) | Step-by-step install, PAT creation, `.env` setup, first working script. | You're starting from zero. |
+| [concepts.md](docs/concepts.md) | OData explained, WorkItems vs Revisions vs Snapshot, flow metrics, async/await basics. | You want to understand what the library is doing under the hood. |
+| [cookbook.md](docs/cookbook.md) | 8 recipes: filter, paginate, cycle time, throughput, WIP, CSV export, error handling. | You know the basics and want to do something specific. |
+| [glossary.md](docs/glossary.md) | Alphabetical list of every term (OData, PAT, WIP, cycle time, etc.). | You hit a term you don't recognize. |
+| [troubleshooting.md](docs/troubleshooting.md) | Symptom → cause → solution for 401, 400, 203, module errors, long URLs. | Something isn't working and you need a quick fix. |
+| [intern_first_query.py](examples/intern_first_query.py) | Minimal script: count work items grouped by StateCategory. | You want the smallest runnable example. |
+| [demo_flow_metrics.py](demo_flow_metrics.py) | Full demo: cycle time, weekly throughput, daily WIP (109 lines). | You want to see a real-world flow metrics calculation. |
+
+---
+
+## Quickstart
+
+> ⏱ **5 minutes** from clone to first result.
 
 ```python
-"""Primeira consulta com ado-odata-async."""
+"""First query with ado-odata-async."""
 import asyncio
 import os
 import sys
@@ -44,21 +49,21 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Carrega .env do diretório atual (não do diretório do script)
+# Load .env from current directory (not script directory)
 env_path = Path(".env")
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
 
-# Lê credenciais — suporta ADO_* e AZURE_DEVOPS_* como fallback
+# Read credentials — supports ADO_* and AZURE_DEVOPS_* as fallback
 pat = os.environ.get("ADO_PAT") or os.environ.get("AZURE_DEVOPS_PAT") or ""
 org = os.environ.get("ADO_ORG") or os.environ.get("AZURE_DEVOPS_ORG") or ""
 project = os.environ.get("ADO_PROJECT") or os.environ.get("AZURE_DEVOPS_PROJECT") or ""
 
 if not pat or not org or not project:
-    print("ERRO: defina ADO_PAT, ADO_ORG e ADO_PROJECT no .env")
+    print("ERROR: set ADO_PAT, ADO_ORG and ADO_PROJECT in .env")
     sys.exit(1)
 
-print(f"Conectando em {org}/{project} ...")
+print(f"Connecting to {org}/{project} ...")
 
 
 async def main() -> None:
@@ -74,7 +79,7 @@ async def main() -> None:
         )
 
     items = result.get("value", [])
-    print(f"\nEncontrados {len(items)} work items:\n")
+    print(f"\nFound {len(items)} work items:\n")
     for item in items:
         print(f"  #{item['WorkItemId']}  [{item['WorkItemType']}]  {item['State']:20s}  {item['Title']}")
 
@@ -82,121 +87,35 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-> **Antes de rodar**: crie um arquivo `.env` na raiz do projeto com:
+> **Before running**: create a `.env` file in the project root with:
 > ```
-> ADO_ORG=sua-org
-> ADO_PROJECT=seu-projeto
-> ADO_PAT=seu-personal-access-token
+> ADO_ORG=your-org
+> ADO_PROJECT=your-project
+> ADO_PAT=your-personal-access-token
 > ```
-> Veja o [guia de início rápido](docs/getting-started.md) para instruções passo a passo.
+> See the [getting started guide](docs/getting-started.md) for step-by-step instructions.
 
 ---
 
-## Exemplos
+## PAT security
 
-A pasta [`demo_flow_metrics.py`](demo_flow_metrics.py) contém um script completo (109 linhas) que calcula:
+> ⚠️ Your PAT (Personal Access Token) is a password that grants read access to your Azure DevOps organization. Treat it like your bank password.
 
-- **Cycle time** — tempo médio que os items ficam em Active até Closed
-- **Throughput semanal** — quantos items são fechados por semana
-- **WIP diário** — quantos items estão em andamento a cada dia
-
-```python
-# Trecho: calculando cycle time com a API paginada
-from ado_odata_async import AdoODataClient
-from ado_odata_async.query import Filter
-
-async with AdoODataClient(org=org, project=project, pat=pat) as client:
-    async for page in client.paginate(
-        "WorkItems",
-        top=200,
-        query={
-            "$filter": "StateCategory eq 'Completed'",
-            "$select": "WorkItemId,Title,State,CreatedDate,ActivatedDate,ClosedDate",
-            "$orderby": "ClosedDate desc",
-        },
-    ):
-        for item in page.get("value", []):
-            print(item["WorkItemId"], item["Title"], item.get("ClosedDate"))
-```
-
----
-
-## Conceitos rápidos
-
-| Conceito | Em uma frase |
-|---|---|
-| **OData** | É um padrão REST com uma linguagem de consulta poderosa — como SQL para URLs. Você usa `$filter`, `$select`, `$top` para buscar exatamente o que precisa. |
-| **Flow metrics** | São métricas que medem o fluxo de trabalho: cycle time (tempo de entrega), throughput (quantidade entregue) e WIP (trabalho em andamento). |
-
-Veja explicações completas em [`docs/concepts.md`](docs/concepts.md).
-
----
-
-## Documentação completa
-
-| Arquivo | O que contém |
-|---|---|
-| [`docs/getting-started.md`](docs/getting-started.md) | Instalação, criação de PAT, primeiro script passo a passo |
-| [`docs/concepts.md`](docs/concepts.md) | OData, WorkItems vs Revisions vs Snapshot, flow metrics, async/await |
-| [`docs/cookbook.md`](docs/cookbook.md) | 8 receitas práticas: filtrar, paginar, calcular cycle time, exportar CSV, tratar erros |
-| [`docs/troubleshooting.md`](docs/troubleshooting.md) | Erros comuns: 401, 400, 203, ValidationError — sintoma → causa → solução |
-| [`docs/glossary.md`](docs/glossary.md) | Definições de todos os termos técnicos usados na biblioteca |
-
----
-
-## Segurança do PAT
-
-> ⚠️ **Contexto bancário**: seu PAT (Personal Access Token) é uma senha que dá acesso de leitura ao Azure DevOps da organização. Trate-o com o mesmo cuidado que sua senha do banco.
-
-1. **Escopo mínimo**: ao criar o PAT, selecione exclusivamente as permissões:
+1. **Minimum scope**: when creating the PAT, select only:
    - `Work Items (Read)`
    - `Analytics (Read)`
-   - Nada mais. Princípio do menor privilégio.
+   - Nothing else. Least privilege.
 
-2. **Expiração curta**: defina expiração para **30 dias** (no máximo 90). Crie um lembrete na agenda para renovar antes de expirar.
+2. **Short expiration**: set expiration to **30 days** (max 90). Set a calendar reminder to renew before it expires.
 
-3. **Nunca commitar**: o PAT nunca deve ser versionado no git. O arquivo `.env` já está no `.gitignore` do projeto — confirme antes de dar `git add`.
+3. **Never commit**: the PAT must never be version-controlled. The `.env` file is already in `.gitignore` — confirm before `git add`.
 
-4. **Roteação periódica**: a cada novo projeto ou ao final do estágio, revogue o token antigo e gere um novo. Siga a política de segurança da sua instituição.
+4. **Periodic rotation**: at each new project or end of internship, revoke the old token and generate a new one. Follow your institution's security policy.
 
-5. **Compartilhamento zero**: não compartilhe seu PAT por e-mail, chat ou código. Se precisar compartilhar acesso, peça para a pessoa gerar o próprio token.
-
-6. **Roteação (rotate)**: inclua a rotação do PAT no seu calendário — crie um lembrete recorrente. Bancos geralmente exigem rotação a cada 30-60 dias.
+5. **Zero sharing**: don't share your PAT via email, chat, or code. If someone needs access, have them generate their own token.
 
 ---
 
-## Glossário rápido
+## License
 
-| Termo | Significado |
-|---|---|
-| **OData** | Open Data Protocol — protocolo REST para consulta de dados |
-| **PAT** | Personal Access Token — token de acesso pessoal para autenticação |
-| **ADO** | Azure DevOps — plataforma de desenvolvimento da Microsoft |
-| **WIP** | Work In Progress — trabalho em andamento |
-| **Cycle time** | Tempo entre o início e a conclusão de um work item |
-| **Throughput** | Quantidade de work items concluídos em um período |
-| **Pydantic** | Biblioteca Python para validação de dados com tipos |
-
-Consulte o [glossário completo](docs/glossary.md) para todos os termos.
-
----
-
-## Solução de problemas
-
-| Situação | O que fazer |
-|---|---|
-| `401 Unauthorized` | Seu PAT expirou ou está com escopo insuficiente. Crie um novo. |
-| `HTTP 203 + HTML no body` | PAT inválido ou nome da organização errado. |
-| `ModuleNotFoundError` | Rodou `uv sync` sem a flag `--all-groups`? Tente com ela. |
-| `400 Bad Request` | Verifique a sintaxe do filtro. Faltou `as <alias>` no aggregate? |
-| URL muito longa | A biblioteca faz batch automático acima de 3000 caracteres (configurável). |
-| Não entendeu um termo | Consulte o [glossário](docs/glossary.md) — todas as siglas estão definidas lá. |
-| Ainda travado | Abra uma [issue no GitHub](https://github.com/ohmyopencode/odata-python-wrapper/issues). |
-
-Veja [`docs/troubleshooting.md`](docs/troubleshooting.md) para diagnósticos detalhados.
-
----
-
-## Licença
-
-MIT &copy; OhMyOpenCode
+MIT © OhMyOpenCode
