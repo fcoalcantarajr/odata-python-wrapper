@@ -66,3 +66,5 @@ docs/_scratch/
 *.orig
 *~
 docs/_scratch/
+*,cover
+*.cover
