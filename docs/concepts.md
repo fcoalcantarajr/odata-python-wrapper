@@ -26,7 +26,7 @@ https://analytics.dev.azure.com/minha-org/meu-projeto/_odata/v4.0-preview/WorkIt
 | `$orderby` | Ordena | `CreatedDate desc` |
 | `$skip` | Pula linhas (para paginação) | `$skip=20` |
 | `$expand` | Traz dados relacionados | `$expand=Children` |
-| `$apply` | Agrupa e agrega (como GROUP BY) | `groupby((State))/aggregate(...)` |
+| `$apply` | Agrupa e agrega (como GROUP BY) | `groupby((State),aggregate($count as Count))` |
 
 A biblioteca `ado-odata-async` constrói essas URLs para você usando o `QueryBuilder` — você não precisa se preocupar com a sintaxe exata.
 
@@ -120,6 +120,7 @@ A solução: **StateCategory** é uma classificação universal que independe do
 | `Proposed` | Item foi criado mas ainda não começou |
 | `InProgress` | Item está sendo trabalhado |
 | `Completed` | Item foi finalizado |
+| `Resolved` | Item foi resolvido mas ainda não fechado |
 | `Removed` | Item foi descartado |
 
 **Use StateCategory** nos filtros em vez de State. Exemplo:
