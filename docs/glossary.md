@@ -177,7 +177,7 @@ async for page in client.paginate("WorkItems", top=100):
 
 ## StateCategory
 
-**Definição**: Classificação universal do estado de um work item, que não depende do idioma ou personalização. Valores: `Proposed`, `InProgress`, `Completed`, `Removed`.
+**Definição**: Classificação universal do estado de um work item, que não depende do idioma ou personalização. Valores: `Proposed`, `InProgress`, `Completed`, `Resolved`, `Removed`.
 
 **Exemplo**: `StateCategory eq 'Completed'` funciona em qualquer projeto, independente de o estado localizado ser "Concluído" ou "Done".
 
