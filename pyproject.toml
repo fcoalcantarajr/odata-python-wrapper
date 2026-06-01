@@ -1,6 +1,6 @@
 [project]
 name = "ado-odata-async"
-version = "0.0.1"
+version = "0.1.0"
 description = "Async Python wrapper for Azure DevOps Analytics OData (v4.0-preview)."
 readme = "README.md"
 requires-python = ">=3.12"
