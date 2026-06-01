@@ -68,3 +68,4 @@ docs/_scratch/
 docs/_scratch/
 *,cover
 *.cover
+.omo/run-continuation/
