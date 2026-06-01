@@ -74,8 +74,9 @@
       ]
     },
     "sisyphus-junior": {
-      "model": "opencode/deepseek-v4-flash-free",
+      "model": "opencode/minimax-m3-free",
       "fallback_models": [
+        "opencode/deepseek-v4-flash-free",
         "openrouter/openai/gpt-oss-20b:free",
         "openrouter/openrouter/free"
       ]
