@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-openagent/dev/assets/oh-my-opencode.schema.json",
   "agents": {
     "sisyphus": {
-      "model": "opencode/big-pickle",
+      "model": "opencode/mimo-v2.5-free",
       "fallback_models": [
         "openrouter/z-ai/glm-4.5-air:free",
         "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
@@ -20,7 +20,7 @@
     "oracle": {
       "model": "opencode/deepseek-v4-flash-free",
       "fallback_models": [
-        "openrouter/qwen/qwen3-coder:free",
+        "opencode/minimax-m3-free",
         "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
         "openrouter/openrouter/free"
       ]
@@ -29,20 +29,20 @@
       "model": "opencode/deepseek-v4-flash-free",
       "fallback_models": [
         "openrouter/z-ai/glm-4.5-air:free",
-        "openrouter/qwen/qwen3-coder:free",
+        "opencode/minimax-m3-free",
         "openrouter/openrouter/free"
       ]
     },
     "metis": {
       "model": "opencode/deepseek-v4-flash-free",
       "fallback_models": [
-        "openrouter/qwen/qwen3-coder:free",
+        "opencode/minimax-m3-free",
         "openrouter/meta-llama/llama-3.3-70b-instruct:free",
         "openrouter/openrouter/free"
       ]
     },
     "hephaestus": {
-      "model": "openrouter/qwen/qwen3-coder:free",
+      "model": "opencode/minimax-m3-free",
       "fallback_models": [
         "opencode/deepseek-v4-flash-free",
         "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
@@ -50,7 +50,7 @@
       ]
     },
     "atlas": {
-      "model": "openrouter/qwen/qwen3-coder:free",
+      "model": "opencode/minimax-m3-free",
       "fallback_models": [
         "opencode/deepseek-v4-flash-free",
         "openrouter/openai/gpt-oss-20b:free",
@@ -60,7 +60,7 @@
     "explore": {
       "model": "opencode/deepseek-v4-flash-free",
       "fallback_models": [
-        "openrouter/qwen/qwen3-coder:free",
+        "opencode/minimax-m3-free",
         "openrouter/qwen/qwen3-next-80b-a3b-instruct:free",
         "openrouter/openrouter/free"
       ]
@@ -69,7 +69,7 @@
       "model": "opencode/deepseek-v4-flash-free",
       "fallback_models": [
         "openrouter/meta-llama/llama-3.3-70b-instruct:free",
-        "openrouter/qwen/qwen3-coder:free",
+        "opencode/minimax-m3-free",
         "openrouter/openrouter/free"
       ]
     },
