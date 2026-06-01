@@ -1,4 +1,4 @@
-"""RED test for SR-001: Pagination must raise descriptive error if context exits early."""
+"""GREEN: SR-001 session-exit pagination guard (fixed bd996e2)."""
 
 import pytest
 
