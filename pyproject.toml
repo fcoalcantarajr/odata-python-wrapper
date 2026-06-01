@@ -4,7 +4,8 @@ version = "0.0.1"
 description = "Async Python wrapper for Azure DevOps Analytics OData (v4.0-preview)."
 readme = "README.md"
 requires-python = ">=3.12"
-license = { text = "MIT" }
+license = "MPL-2.0"
+license-files = ["LICENSE"]
 authors = [{ name = "Chicão Alcântara", email = "fcoalcantarajr@gmail.com" }]
 keywords = ["azure-devops", "analytics", "odata", "async", "aiohttp"]
 classifiers = [
