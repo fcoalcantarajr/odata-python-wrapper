@@ -301,6 +301,8 @@ asyncio.run(my_function())
 
 ---
 
+<a id="english"></a>
+
 ## Português (Brasil)
 
 [Português](#english) | **English**
@@ -436,8 +438,8 @@ A solução: **StateCategory** é uma classificação universal que independe do
 # ✅ Correto (funciona em qualquer projeto/idioma)
 filter_expr = Filter.eq("StateCategory", "Completed")
 
-# ❌ Frágil (só funciona se o estado exato for 'Concluído')
-filter_expr = Filter.eq("State", "Concluído")
+# ❌ Frágil (só funciona se o estado exato for 'Done')
+filter_expr = Filter.eq("State", "Done")
 ```
 
 ---

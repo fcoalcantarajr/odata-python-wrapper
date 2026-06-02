@@ -66,6 +66,8 @@ client.get(entity_set, **params)
 
 ---
 
+<a id="english"></a>
+
 ## Português (Brasil)
 
 [Português](#english) | **English**

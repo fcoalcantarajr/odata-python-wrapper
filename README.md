@@ -229,6 +229,8 @@ Built with [OhMyOpenCode](https://ohmyopencode.com)
 
 ---
 
+<a id="english"></a>
+
 ## Português (Brasil)
 
 [Português](#english) | **English**

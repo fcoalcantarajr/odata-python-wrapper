@@ -200,6 +200,8 @@ Foram encontrados 5 work items:
 
 ---
 
+<a id="english"></a>
+
 ## Português (Brasil)
 
 [Português](#english) | **English**

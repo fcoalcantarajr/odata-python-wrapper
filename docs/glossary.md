@@ -247,6 +247,8 @@ async for page in client.paginate("WorkItems", top=100):
 
 ---
 
+<a id="english"></a>
+
 ## Português (Brasil)
 
 [Português](#english) | **English**

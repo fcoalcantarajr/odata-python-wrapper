@@ -565,6 +565,8 @@ client.query("WorkItemSnapshot").apply(
 
 ---
 
+<a id="english"></a>
+
 ## Português (Brasil)
 
 [Português](#english) | **English**
@@ -619,8 +621,8 @@ asyncio.run(main())
 
 **Output esperado**:
 ```
-#   42  [Tarefa    ]  Done             2025-05-20  Criar tela de login
-#   43  [Bug       ]  Concluído        2025-05-19  Corrigir timeout
+#   42  [Task      ]  Done             2025-05-20  Create login screen
+#   43  [Bug       ]  Done             2025-05-19  Fix timeout
 #  ...
 ```
 
@@ -670,9 +672,9 @@ async def main() -> None:
             .get()
         )
 
-    print(f"Bugs abertos nas últimas 2 semanas: {len(result.get('value', []))}\n")
+    print(f"Open bugs in the last 2 weeks: {len(result.get('value', []))}\n")
     for item in result.get("value", []):
-        print(f"  #{item['WorkItemId']}  Criado: {item['CreatedDate'][:10]}  {item['Title']}")
+        print(f"  #{item['WorkItemId']}  Created: {item['CreatedDate'][:10]}  {item['Title']}")
 
 
 asyncio.run(main())
@@ -720,9 +722,9 @@ async def main() -> None:
         ):
             items = page.get("value", [])
             total += len(items)
-            print(f"Página recebida com {len(items)} items (total acumulado: {total})")
+            print(f"Page received with {len(items)} items (running total: {total})")
 
-    print(f"\nTotal de work items em 2025: {total}")
+    print(f"\nTotal work items in 2025: {total}")
 
 
 asyncio.run(main())
@@ -787,7 +789,7 @@ async def main() -> None:
                         ciclo_dias.append(dias)
 
     if not ciclo_dias:
-        print("Nenhum item com cycle time disponível.")
+        print("No items with cycle time available.")
         return
 
     ciclo_dias.sort()
@@ -796,10 +798,10 @@ async def main() -> None:
     p85 = ciclo_dias[min(n - 1, int(n * 0.85))]
     p95 = ciclo_dias[min(n - 1, int(n * 0.95))]
 
-    print(f"Items analisados: {n}")
-    print(f"Cycle time p50:   {p50:.1f} dias")
-    print(f"Cycle time p85:   {p85:.1f} dias")
-    print(f"Cycle time p95:   {p95:.1f} dias")
+    print(f"Items analyzed: {n}")
+    print(f"Cycle time p50:   {p50:.1f} days")
+    print(f"Cycle time p85:   {p85:.1f} days")
+    print(f"Cycle time p95:   {p95:.1f} days")
 
 
 asyncio.run(main())
@@ -807,10 +809,10 @@ asyncio.run(main())
 
 **Output esperado**:
 ```
-Items analisados: 47
-Cycle time p50:   3.2 dias
-Cycle time p85:   8.7 dias
-Cycle time p95:   14.1 dias
+Items analyzed: 47
+Cycle time p50:   3.2 days
+Cycle time p85:   8.7 days
+Cycle time p95:   14.1 days
 ```
 
 **Como funciona**: Filtramos por `StateCategory eq 'Completed'` para pegar items já finalizados. Calculamos a diferença entre `ActivatedDate` (quando começou) e `ClosedDate` (quando terminou). Usamos percentis (p50, p85, p95) em vez de média porque a distribuição de cycle time geralmente é assimétrica.
@@ -856,7 +858,7 @@ async def main() -> None:
             for item in page.get("value", []):
                 contagem[item["WorkItemType"]] += 1
 
-    print("Distribuição por tipo:\n")
+    print("Distribution by type:\n")
     for tipo, qtd in contagem.most_common():
         barra = "█" * min(qtd, 50)
         print(f"  {tipo:15s} {qtd:5d}  {barra}")
@@ -867,10 +869,10 @@ asyncio.run(main())
 
 **Output esperado**:
 ```
-Distribuição por tipo:
+Distribution by type:
 
   Bug              23  █████████████████████
-  Tarefa           89  ██████████████████████████████████████████████████
+  Task             89  ██████████████████████████████████████████████████
   User Story       12  ████████████
 ```
 
@@ -919,7 +921,7 @@ async def main() -> None:
     # JSON
     with open("work_items.json", "w", encoding="utf-8") as f:
         json.dump(todos, f, indent=2, ensure_ascii=False, default=str)
-    print(f"JSON salvo: work_items.json ({len(todos)} registros)")
+    print(f"JSON saved: work_items.json ({len(todos)} records)")
 
     # CSV
     if todos:
@@ -927,7 +929,7 @@ async def main() -> None:
             writer = csv.DictWriter(f, fieldnames=list(todos[0].keys()))
             writer.writeheader()
             writer.writerows(todos)
-        print(f"CSV salvo: work_items.csv ({len(todos)} registros)")
+        print(f"CSV saved: work_items.csv ({len(todos)} records)")
 
 
 asyncio.run(main())
@@ -935,8 +937,8 @@ asyncio.run(main())
 
 **Output esperado**:
 ```
-JSON salvo: work_items.json (47 registros)
-CSV salvo: work_items.csv (47 registros)
+JSON saved: work_items.json (47 records)
+CSV saved: work_items.csv (47 records)
 ```
 
 **Como funciona**: Coletamos todos os items via paginação, depois usamos `json.dump` e `csv.DictWriter` para exportar. O parâmetro `ensure_ascii=False` preserva caracteres acentuados (PT-BR). `default=str` converte datas para string, já que o JSON não serializa `datetime` nativamente.
@@ -975,7 +977,7 @@ async def main() -> None:
     from ado_odata_async.query import Filter
 
     if not pat or not org or not project:
-        print("ERRO: credenciais não encontradas no .env")
+        print("ERROR: credentials not found in .env")
         sys.exit(1)
 
     try:
@@ -992,21 +994,21 @@ async def main() -> None:
             print(f"#{item['WorkItemId']}: {item['Title']}")
 
     except AuthenticationError:
-        print("ERRO: PAT inválido ou expirado. Crie um novo token em ")
-        print("  https://dev.azure.com/{sua-org}/_usersSettings/tokens")
+        print("ERROR: invalid or expired PAT. Create a new token at")
+        print("  https://dev.azure.com/{your-org}/_usersSettings/tokens")
         sys.exit(1)
 
     except BadRequestError as e:
-        print(f"ERRO: requisição inválida — verifique a sintaxe do filtro")
-        print(f"  Detalhe: {e}")
+        print(f"ERROR: invalid request — check the filter syntax")
+        print(f"  Detail: {e}")
         sys.exit(1)
 
     except RateLimitError:
-        print("ERRO: muitas requisições — aguarde alguns minutos e tente novamente")
+        print("ERROR: too many requests — wait a few minutes and try again")
         sys.exit(1)
 
     except TransientError:
-        print("ERRO: problema temporário de rede ou servidor — tente novamente")
+        print("ERROR: temporary network or server issue — try again")
         sys.exit(1)
 
 
@@ -1058,7 +1060,7 @@ async def main() -> None:
         )
 
     for row in result.get("value", []):
-        print(f"Data: {row['DateSK']}  Estado: {row['State']:15s}  Qtd: {row.get('Count', 'N/A')}")
+        print(f"Date: {row['DateSK']}  State: {row['State']:15s}  Count: {row.get('Count', 'N/A')}")
 
 
 asyncio.run(main())
@@ -1066,9 +1068,9 @@ asyncio.run(main())
 
 **Output esperado**:
 ```
-Data: 2025-05-01  Estado: Concluído      Qtd: 12
-Data: 2025-05-01  Estado: Done           Qtd: 5
-Data: 2025-05-02  Estado: Concluído      Qtd: 8
+Date: 2025-05-01  State: Done           Count: 12
+Date: 2025-05-01  State: Completed      Count: 5
+Date: 2025-05-02  State: Done           Count: 8
 ```
 
 **Como funciona**: O `Apply` monta a expressão `$apply=filter(...)/groupby((DateSK,State),aggregate($count as Count))`. O aggregate é **aninhado** dentro do groupby (sintaxe exigida pelo ADO Analytics). O `.aggregate("$count", alias="Count")` conta as linhas de cada grupo, e o alias `Count` nomeia a coluna de saída.
@@ -1112,7 +1114,7 @@ O método `aggregate(field, method)`) segue a ordem canônica do OData: campo/pr
 
 ```python
 # ❌ ERRADO: State retorna nomes localizados (depende do idioma do projeto)
-filter_expr = Filter.eq("State", "Concluído")
+filter_expr = Filter.eq("State", "Done")
 
 # ✅ CORRETO: StateCategory funciona em qualquer idioma
 filter_expr = Filter.eq("StateCategory", "Completed")

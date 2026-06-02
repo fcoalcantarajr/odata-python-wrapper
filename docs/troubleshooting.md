@@ -258,6 +258,8 @@ Apply()
 
 ---
 
+<a id="english"></a>
+
 ## Português (Brasil)
 
 [Português](#english) | **English**
