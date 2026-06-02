@@ -2,7 +2,7 @@
 
 # Core concepts
 
-> Audience: CS intern (knows variables/loops/functions, never seen async/await, OData, or REST).
+> You know variables, loops, and functions, but have never seen async/await, OData, or REST.
 
 This document explains the concepts you need to understand to use `ado-odata-async` with confidence.
 
@@ -307,7 +307,7 @@ asyncio.run(my_function())
 
 # Conceitos fundamentais
 
-> Público: estagiário de CS (sabe variáveis/loops/funções, nunca viu async/await, OData ou REST).
+> Você sabe variáveis, loops e funções, mas nunca viu async/await, OData ou REST.
 
 Este documento explica os conceitos que você precisa entender para usar o `ado-odata-async` com confiança.
 
@@ -593,13 +593,13 @@ linha 1: resposta chegou! continua   ←──┘
 import asyncio
 
 
-async def minha_funcao() -> None:
-    print("Vou buscar dados...")
-    resultado = await alguma_busca_http()  # ← não trava o programa
-    print("Dados chegaram:", resultado)
+async def my_function() -> None:
+    print("Fetching data...")
+    result = await some_http_fetch()  # ← não trava o programa
+    print("Data arrived:", result)
 
 
-asyncio.run(minha_funcao())
+asyncio.run(my_function())
 ```
 
 > **Dica**: se você esquecer o `await`, o Python retorna um erro como `coroutine was never awaited`. É o sintoma mais comum de quem está começando com async.

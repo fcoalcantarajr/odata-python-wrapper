@@ -648,7 +648,7 @@ org = os.environ.get("AZURE_DEVOPS_ORG") or ""
 project = os.environ.get("AZURE_DEVOPS_PROJECT") or ""
 pat = os.environ.get("AZURE_DEVOPS_PAT") or ""
 
-dias_atras = (datetime.now(UTC) - timedelta(days=14)).isoformat()
+days_ago = (datetime.now(UTC) - timedelta(days=14)).isoformat()
 
 
 async def main() -> None:
@@ -658,7 +658,7 @@ async def main() -> None:
     filtro = Filter.and_(
         Filter.eq("WorkItemType", "Bug"),
         Filter.eq("StateCategory", "InProgress"),
-        Filter.ge("CreatedDate", dias_atras),
+        Filter.ge("CreatedDate", days_ago),
     )
 
     async with AdoODataClient(org=org, project=project, pat=pat) as client:

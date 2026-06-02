@@ -225,7 +225,7 @@ VS403483: $apply/groupby grouping expression 'WorkItemId' must evaluate to a pro
 ```
 (HTTP 400 Bad Request)
 
-**Cause**: Two simultaneous causes, both fixed in F12:
+**Cause**: Two simultaneous causes:
 
 1. **`countdistinct` is blocked by ADO Analytics.** The `countdistinct` function exists in OData, but Azure DevOps Analytics **does not accept it**. Microsoft states future support is planned, but currently it returns an error.
    - [Documentation: "DON'T use countdistinct aggregation"](https://learn.microsoft.com/en-us/azure/devops/report/extend-analytics/odata-query-guidelines?view=azure-devops)

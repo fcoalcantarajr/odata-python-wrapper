@@ -323,9 +323,9 @@ async for page in client.paginate("WorkItems", top=100):
 
 **Exemplo**:
 ```python
-async def buscar() -> None:
-    resultado = await client.get("WorkItems")
-    print(resultado)
+async def fetch() -> None:
+    result = await client.get("WorkItems")
+    print(result)
 ```
 
 **Veja também**: [Conceitos: Async/await](concepts.md#asyncawait-para-quem-nunca-viu)
