@@ -237,7 +237,7 @@ VS403483: $apply/groupby grouping expression 'WorkItemId' must evaluate to a pro
    The incorrect `groupby((...))/aggregate(...)` generates the VS403483 error because, after a standalone `groupby`, only the grouping fields are in scope — the aggregate field (e.g., `WorkItemId`) is not recognized.
    - [Documentation: OData supported features](https://learn.microsoft.com/en-us/azure/devops/report/extend-analytics/odata-supported-features?view=azure-devops)
 
-**Solution** (the library already implements this since F12):
+**Solution** (the library already nests aggregate inside groupby automatically):
 
 ```python
 # ✅ CORRECT: aggregate inside groupby, using $count instead of countdistinct
