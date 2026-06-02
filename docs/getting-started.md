@@ -1,3 +1,209 @@
+**English** | [Português](#português-brasil)
+
+# Getting started
+
+> Audience: first-year intern, first day at the bank, never used Azure DevOps or async Python.
+
+This guide walks you through making your first query to Azure Boards using `ado-odata-async`, from scratch.
+
+---
+
+## Prerequisites
+
+Before you start, you need:
+
+- **Python 3.12 or higher** — verify with `python --version` in the terminal.
+- **uv** — Python project manager (replacement for `pip`). Faster and more reliable.
+- **Azure DevOps account** with access to a project.
+- **Permission to create a PAT** (Personal Access Token) — talk to your tech lead if you don't have one.
+
+---
+
+## Installing uv
+
+If you don't have `uv` installed yet, run:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Then, close and reopen the terminal (or run `source ~/.bashrc`) to load the command.
+
+Verify it worked:
+
+```bash
+uv --version
+```
+
+> If you're on a bank machine with installation restrictions, ask the infrastructure team to install `uv` or use `pip install uv` as a fallback.
+
+---
+
+## Cloning the repository
+
+```bash
+git clone https://github.com/ohmyopencode/odata-python-wrapper.git
+cd odata-python-wrapper
+```
+
+Now install the dependencies:
+
+```bash
+uv sync --all-groups
+```
+
+> The `--all-groups` flag also installs test dependencies (`aioresponses`, `pytest`, etc.). Without it, you can't run the tests or the examples that use these libraries.
+
+---
+
+## Creating your PAT (Personal Access Token)
+
+The PAT is the "password" your script will use to access Azure DevOps. Follow these steps:
+
+1. Go to `https://dev.azure.com/{your-org}` and log in.
+2. In the top-right corner, click the **avatar** (profile picture).
+3. In the menu, click **Personal access tokens**.
+4. Click **+ New Token**.
+5. Give it a name like `ado-odata-async-intern`.
+6. Under **Organization**, select your organization.
+7. Under **Expiration**, choose **30 days** (never use "Never expiring" in a banking environment).
+8. Under **Scopes**, click **Show all scopes** and select only:
+   - **Work Items** → **Read** (read work items)
+   - **Analytics** → **Read** (read metrics)
+9. Click **Create**.
+10. **COPY THE TOKEN NOW**. Once you close the window, you won't be able to see it again.
+
+> ⚠️ **Golden rule**: this token grants read access to Azure DevOps data. Never share it, never commit it to git, never send it by email.
+
+---
+
+## Configuring .env
+
+Create a file named `.env` in the project root with the following content:
+
+```bash
+ADO_ORG=sua-organizacao
+ADO_PROJECT=nome-do-seu-projeto
+ADO_PAT=seu-token-aqui
+```
+
+The library also accepts the variables `AZURE_DEVOPS_ORG`, `AZURE_DEVOPS_PROJECT` and `AZURE_DEVOPS_PAT` as alternatives.
+
+> **The `.env` file is already in `.gitignore`** — that means it will NOT be tracked by git. Run `git status` before committing any change.
+
+---
+
+## Your first script
+
+Create a file named `meu_primeiro_script.py` with the code below:
+
+```python
+"""Meu primeiro script com ado-odata-async."""
+import asyncio
+import os
+import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Carrega as credenciais do arquivo .env (apenas se existir)
+env_path = Path(".env")
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+
+pat = os.environ.get("ADO_PAT") or os.environ.get("AZURE_DEVOPS_PAT") or ""
+org = os.environ.get("ADO_ORG") or os.environ.get("AZURE_DEVOPS_ORG") or ""
+project = os.environ.get("ADO_PROJECT") or os.environ.get("AZURE_DEVOPS_PROJECT") or ""
+
+if not pat or not org or not project:
+    print("ERRO: crie o arquivo .env com ADO_ORG, ADO_PROJECT e ADO_PAT")
+    sys.exit(1)
+
+
+async def main() -> None:
+    """Busca os 5 work items mais recentes e imprime na tela."""
+    from ado_odata_async import AdoODataClient
+    from ado_odata_async.query import Filter
+
+    # O bloco 'async with' cria e fecha a conexão automaticamente
+    async with AdoODataClient(org=org, project=project, pat=pat) as client:
+        result = await (
+            client.query("WorkItems")
+            .select("WorkItemId", "Title", "State", "WorkItemType")
+            .top(5)
+            .get()
+        )
+
+    items = result.get("value", [])
+    print(f"Foram encontrados {len(items)} work items:\n")
+    for item in items:
+        wid = item["WorkItemId"]
+        wtype = item["WorkItemType"]
+        state = item["State"]
+        title = item["Title"]
+        print(f"  #{wid}  [{wtype}]  {state:20s}  {title}")
+
+
+asyncio.run(main())
+```
+
+### Line-by-line explanation
+
+| Line | What it does |
+|---|---|
+| `import asyncio` | Imports Python's async programming module (explained further in [`docs/concepts.md`](concepts.md)). |
+| `from dotenv import load_dotenv` | Loads the variables from the `.env` file into the environment variables. |
+| `env_path = Path(".env")` | Creates a Path object pointing to `.env` (defensive: doesn't fail if the file doesn't exist). |
+| `if env_path.exists(): load_dotenv(...)` | Loads credentials only if `.env` exists. |
+| `os.environ.get(...)` | Reads the environment variable value (or empty string if it doesn't exist). |
+| `AdoODataClient(org=..., project=..., pat=...)` | Creates the connection client to Azure DevOps. |
+| `async with ... as client:` | Opens the connection (async mode) and ensures it's closed at the end. |
+| `client.query("WorkItems")` | Creates a QueryBuilder pointing to the "WorkItems" entity. |
+| `.select("WorkItemId", "Title", ...)` | Chooses which columns to fetch (fewer columns = faster response). |
+| `.top(5)` | Limits to 5 results. |
+| `.get()` | Executes the query and waits for the response. The `await` is essential here. |
+| `result["value"]` | The list of work items comes under the key `"value"` (OData standard). |
+| `asyncio.run(main())` | Entry point: runs the `main()` function asynchronously. |
+
+### Running
+
+```bash
+uv run python meu_primeiro_script.py
+```
+
+You should see something like:
+
+```
+Foram encontrados 5 work items:
+
+  #1234  [Tarefa]    Done                  Criar tela de login
+  #1235  [Tarefa]    In Progress           Ajustar validação de CPF
+  #1236  [Bug]       Concluído             Corrigir timeout na consulta
+  #1237  [Tarefa]    Done                  Documentar endpoints
+  #1238  [Tarefa]    To Do                 Configurar ambiente de staging
+```
+
+> 💡 **`State` vs `StateCategory`**: The `State` column returns the localized name of the state (e.g., "Concluído", "Done", "Em Andamento") — that is, the value depends on the project language. For filters that work in any language, use `StateCategory`, which returns fixed values in English: `"InProgress"`, `"Completed"`, `"Proposed"`.
+
+> If you get `401 Unauthorized`, your PAT may have expired or have the wrong scope. See [`docs/troubleshooting.md`](troubleshooting.md).
+
+---
+
+## What's next?
+
+| Next step | Where |
+|---|---|
+| Understand the concepts behind the library | [`docs/concepts.md`](concepts.md) |
+| See practical recipes (filter, paginate, calculate metrics) | [`docs/cookbook.md`](cookbook.md) |
+| Consult the glossary of technical terms | [`docs/glossary.md`](glossary.md) |
+| Solve common errors | [`docs/troubleshooting.md`](troubleshooting.md) |
+
+---
+
+## Português (Brasil)
+
+[Português](#english) | **English**
+
 # Guia de início rápido
 
 > Público: estagiário de primeiro ano, primeiro dia no banco, nunca usou Azure DevOps nem Python assíncrono.

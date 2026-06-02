@@ -1,3 +1,5 @@
+**English** | [Português](#português-brasil)
+
 # ado-odata-async
 
 Async Python client for Azure DevOps Analytics OData.
@@ -27,7 +29,7 @@ Async Python client for Azure DevOps Analytics OData.
 
 ## Overview
 
-This library wraps the Azure DevOps Analytics OData API — eliminates raw URL construction, handles auth, pagination, retry, and the `$apply` DSL. For developers who need cycle time, throughput, or WIP from Azure Boards without writing raw OData URLs.
+This library wraps the Azure DevOps Analytics OData API — eliminates raw URL construction, handles auth, pagination, retry, and the `$apply` [DSL](docs/glossary.md#apply). For you if you need [cycle time](docs/glossary.md#cycle-time-tempo-de-ciclo), [throughput](docs/glossary.md#throughput-vazo), or [WIP](docs/glossary.md#wip-work-in-progress) from Azure Boards without writing raw OData URLs.
 
 ---
 
@@ -224,3 +226,234 @@ Contributions welcome! Open an issue or submit a pull request. Run `uv run pytes
 ## Acknowledgments
 
 Built with [OhMyOpenCode](https://ohmyopencode.com)
+
+---
+
+## Português (Brasil)
+
+[Português](#english) | **English**
+
+Cliente Python assíncrono para Azure DevOps Analytics OData.
+
+[![License: MPL 2.0](https://img.shields.io/badge/license-MPL%202.0-blue.svg)](LICENSE)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](pyproject.toml)
+
+---
+
+## Índice
+
+- [Visão geral](#visão-geral)
+- [Funcionalidades](#funcionalidades)
+- [Pré-requisitos](#pré-requisitos)
+- [Instalação](#instalação)
+- [Configuração](#configuração)
+- [Início rápido](#início-rápido)
+- [Exemplo de saída](#exemplo-de-saída)
+- [Uso](#uso)
+- [Índice da documentação](#índice-da-documentação)
+- [Solução de problemas](#solução-de-problemas)
+- [Licença](#licença)
+- [Contribuindo](#contribuindo)
+- [Agradecimentos](#agradecimentos)
+
+---
+
+## Visão geral
+
+Esta biblioteca encapsula a API OData do Azure DevOps Analytics — elimina a construção manual de URLs, cuida de autenticação, paginação, retentativas e da DSL `$apply`. Para você se precisar de [cycle time](docs/glossary.md#cycle-time-tempo-de-ciclo), [throughput](docs/glossary.md#throughput-vazo) ou [WIP](docs/glossary.md#wip-work-in-progress) do Azure Boards sem escrever URLs OData na unha.
+
+---
+
+## Funcionalidades
+
+- **Assíncrono por padrão** — construído sobre `aiohttp`, sem chamadas bloqueantes
+- **DSL `$apply`** — encadeie `filter()`, `groupby()`, `aggregate()` sem strings OData cruas
+- **Paginação** — tratamento automático de `@odata.nextLink` via `paginate()`
+- **Retentativas com backoff** — retentativas baseadas em `tenacity` para falhas transitórias
+- **Validação com Pydantic** — modelos estritos e imutáveis para todas as respostas
+- **Sem dependências externas de auth** — usa `aiohttp.BasicAuth` direto com seu PAT
+
+---
+
+## Pré-requisitos
+
+- **Python 3.12+**
+- **Gerenciador de pacotes [uv](https://docs.astral.sh/uv/)** — instale com `pip install uv` ou visite o link
+- **Personal Access Token do Azure DevOps** com os escopos:
+  - `Work Items (Read)`
+  - `Analytics (Read)`
+- **Nome da organização** (ex.: `myorg`) e **nome do projeto** (ex.: `myproject`) da sua URL do Azure DevOps
+
+---
+
+## Instalação
+
+**Do git:**
+
+```bash
+uv add git+https://github.com/fcoalcantarajr/odata-python-wrapper@main
+```
+
+**Desenvolvimento local:**
+
+```bash
+git clone https://github.com/fcoalcantarajr/odata-python-wrapper.git
+cd odata-python-wrapper
+uv sync
+```
+
+---
+
+## Configuração
+
+Crie um arquivo `.env` na raiz do seu projeto com estas três variáveis:
+
+```
+AZURE_DEVOPS_ORG=your-org-name
+AZURE_DEVOPS_PROJECT=your-project-name
+AZURE_DEVOPS_PAT=your-personal-access-token
+```
+
+Substitua `your-org-name`, `your-project-name` e `your-personal-access-token` pelos seus valores reais do Azure DevOps.
+
+**Segurança do PAT:** Use escopos mínimos (apenas Work Items Read + Analytics Read), defina uma expiração curta (30 dias) e nunca faça commit do `.env` no controle de versão.
+
+---
+
+## Início rápido
+
+```python
+"""First query with ado-odata-async."""
+import asyncio
+import os
+from pathlib import Path
+
+
+def _load_dotenv() -> None:
+    """Load .env file into os.environ (no external deps)."""
+    env_path = Path(".env")
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+_load_dotenv()
+
+async def main() -> None:
+    from ado_odata_async import AdoODataClient
+    from ado_odata_async.query import Apply, Filter
+
+    async with AdoODataClient(
+        org=os.environ["AZURE_DEVOPS_ORG"],
+        project=os.environ["AZURE_DEVOPS_PROJECT"],
+        pat=os.environ["AZURE_DEVOPS_PAT"],
+    ) as client:
+        result = await (
+            client.query("WorkItems")
+            .apply(
+                Apply()
+                .filter(Filter.eq("StateCategory", "Completed"))
+                .groupby("State")
+                .aggregate("$count", alias="Count")
+            )
+            .get()
+        )
+
+    for row in result.get("value", []):
+        print(f"{row['State']:20s}  {row['Count']}")
+
+asyncio.run(main())
+```
+
+Salve o script como `quickstart.py` e execute:
+
+```bash
+uv run python quickstart.py
+```
+
+---
+
+## Exemplo de saída
+
+O quickstart filtra por `StateCategory eq 'Completed'` e agrupa por `State`. No Azure DevOps, a categoria Completed inclui estados como Closed, Done e Removed:
+
+```
+Closed               158
+Done                 42
+Removed               3
+```
+
+---
+
+## Uso
+
+**Seleção simples com top:**
+
+```python
+result = await (
+    client.query("WorkItems")
+    .select("WorkItemId", "Title", "State")
+    .top(5)
+    .get()
+)
+```
+
+**Paginação para grandes volumes de dados:**
+
+Use o método `paginate()` para tratar automaticamente os tokens de continuação `@odata.nextLink`:
+
+```python
+async for page in client.query("WorkItems").select("WorkItemId", "Title").paginate():
+    for item in page.get("value", []):
+        print(item["WorkItemId"], item["Title"])
+```
+
+---
+
+## Índice da documentação
+
+| Doc | O que tem dentro | Abra quando… |
+|---|---|---|
+| [getting-started.md](docs/getting-started.md) | Passo a passo de instalação, criação do PAT, configuração do .env | Você está começando do zero |
+| [concepts.md](docs/concepts.md) | OData explicado, WorkItems vs Revisions vs Snapshot | Você quer entender a biblioteca |
+| [cookbook.md](docs/cookbook.md) | 8 receitas: filtro, paginação, cycle time, exportação CSV | Você já conhece o básico |
+| [glossary.md](docs/glossary.md) | Referência alfabética de termos | Você encontrou um termo que não conhece |
+| [troubleshooting.md](docs/troubleshooting.md) | Sintoma → causa → solução para erros | Algo não está funcionando |
+| [architecture.md](docs/architecture.md) | Camadas internas: Auth → HTTP → Client → Query → Serializer | Você quer entender como o código está organizado |
+| [decisions.md](docs/decisions.md) | Architecture Decision Records (ADRs) | Você quer saber por que certas decisões de design foram tomadas |
+| [intern_first_query.py](examples/intern_first_query.py) | Exemplo mínimo executável (usa `python-dotenv` se disponível) | Você quer o menor script possível |
+
+---
+
+## Solução de problemas
+
+Veja [troubleshooting.md](docs/troubleshooting.md) para tabelas completas de sintoma → causa → solução.
+
+**As 2 principais pegadinhas:**
+
+1. **HTTP 203 = PAT inválido.** O ADO retorna 203 com `text/html` quando o PAT está expirado ou malformado. Isso não é retentável — regenere o token.
+
+2. **`$apply` plano vs aninhado.** A biblioteca cuida da ordenação das cláusulas `$apply` automaticamente, mas seu `filter()` precisa vir antes do `groupby()` — filtros dentro de `$apply` escopam as linhas antes da agregação.
+
+---
+
+## Licença
+
+Licenciada sob a Mozilla Public License 2.0. Veja [LICENSE](LICENSE) para detalhes. Você pode usar esta biblioteca como dependência em qualquer projeto; alterações nos arquivos da própria biblioteca precisam permanecer sob MPL-2.0.
+
+---
+
+## Contribuindo
+
+Contribuições são bem-vindas! Abra uma issue ou envie um pull request. Rode `uv run pytest` e `uv run ruff check .` antes de enviar.
+
+---
+
+## Agradecimentos
+
+Construído com [OhMyOpenCode](https://ohmyopencode.com)

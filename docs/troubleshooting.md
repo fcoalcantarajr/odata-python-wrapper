@@ -1,3 +1,267 @@
+**English** | [Português](#português-brasil)
+
+# Troubleshooting
+
+> Each entry starts with the **symptom** (what you see on screen). The cause comes after.
+
+---
+
+## 401 Unauthorized
+
+**What you see**:
+```
+ado_odata_async.exceptions.AuthenticationError: 401 Unauthorized
+```
+
+**Most common cause**: your PAT (Personal Access Token) expired or has the wrong scopes.
+
+**What to do**:
+1. Go to `https://dev.azure.com/{your-org}/_usersSettings/tokens`
+2. Find the token you're using
+3. If it's expired, create a new one (30-day expiration)
+4. If it's active, check the scopes: it needs **Work Items (Read)** and **Analytics (Read)**
+5. Update `.env` with the new token
+
+**How to prevent**:
+- Set expiration to 30 or 90 days and create a calendar reminder
+- Use `try/except AuthenticationError` in your script to catch the error without crashing (see [Recipe 7 in the Cookbook](cookbook.md#7-handle-authentication-and-network-errors))
+
+---
+
+## HTTP 203 + HTML login page in response
+
+**What you see**:
+```
+ado_odata_async.exceptions.AuthenticationError: HTTP 203 Non-Authoritative Information
+```
+And the response body is HTML (Microsoft login page).
+
+**Cause**: Azure DevOps returns HTTP 203 with HTML content when the PAT is invalid **or** the organization URL is wrong. This can happen when:
+- The PAT was revoked
+- The organization doesn't exist or the name is incorrect
+- Your company's SSO/MFA is blocking non-interactive tokens
+
+**What to do**:
+1. Check that the organization name in `.env` is correct
+2. Create a new PAT
+3. If the problem persists, your company may have security policies blocking PATs — talk to your tech lead
+
+**How to prevent**: Test the PAT manually before running the script:
+```bash
+curl -u :$ADO_PAT -H "Content-Type: application/json" \
+  "https://analytics.dev.azure.com/$ADO_ORG/$ADO_PROJECT/_odata/v4.0-preview/WorkItems?\$top=1"
+```
+If curl returns JSON, the PAT works. If it returns HTML, the PAT is invalid.
+
+---
+
+## 400 Bad Request on WorkItemSnapshot
+
+**What you see**:
+```
+ado_odata_async.exceptions.BadRequestError: 400 Bad Request
+```
+(when querying `WorkItemSnapshot` without `$apply`)
+
+**Cause**: The `WorkItemSnapshot` entity set **requires** `$apply` with `groupby`. A plain `$filter` is not accepted by the service.
+
+**What to do**: Use `$apply` with `groupby((DateSK, ...))`:
+
+```python
+# ❌ WRONG: plain filter doesn't work
+client.query("WorkItemSnapshot").filter(Filter.eq("State", "Active")).get()
+
+# ✅ CORRECT: use $apply with groupby
+from ado_odata_async.query import Apply
+
+    client.query("WorkItemSnapshot").apply(
+        Apply()
+        .filter(Filter.eq("State", "Active"))
+        .groupby("DateSK", "State")
+        .aggregate("$count", alias="Count")
+    ).top(10).get()
+```
+
+**How to prevent**: The library validates this automatically! If you forget `groupby`, the `QueryBuilder` raises a `ValueError` before making the request.
+
+---
+
+## 400 Bad Request with aggregate — "as alias"
+
+**What you see**:
+```
+ado_odata_async.exceptions.BadRequestError: 400 Bad Request
+```
+(when your `$apply` expression has `aggregate`)
+
+**Cause**: Azure DevOps Analytics requires each aggregate to have an alias with `as <name>`. Example:
+```
+# ✅ Correct (library generates automatically)
+aggregate(Effort with sum as Effort)
+
+# ❌ Wrong (service rejects)
+aggregate(Effort with sum)
+```
+
+**What to do**: If you're building the query manually (without the `Apply` builder), include `as <alias>`. If you're using the `Apply` builder, it already generates the alias automatically — no action needed.
+
+---
+
+## 400 Bad Request with aggregate — wrong argument order
+
+**What you see**:
+```
+ado_odata_async.exceptions.BadRequestError: 400 Bad Request
+```
+(when using `aggregate` with arguments swapped)
+
+**Cause**: The `aggregate(field, method)` method expects the **field/property** first and the **aggregation method** second. The canonical OData order is `$apply=aggregate(field with method as field)`. Swapping arguments generates an invalid expression, like `aggregate(Count with WorkItemId as Count)` instead of `aggregate(WorkItemId with sum as WorkItemId)`.
+
+Additionally, the method name must be **lowercase**. Valid methods in Azure DevOps Analytics v4.0-preview are:
+- `sum` — sum of values
+- `min` — minimum value
+- `max` — maximum value
+- `average` — arithmetic mean
+
+**What to do**: Check the call order:
+```python
+# ❌ WRONG: method in field position, field in method position
+Apply().groupby("State").aggregate("Count", "WorkItemId")   # "Count" becomes method — invalid
+Apply().groupby("State").aggregate("Sum", "Effort")
+
+# ✅ CORRECT: field first, method second (lowercase)
+Apply().groupby("State").aggregate("WorkItemId", "sum")
+Apply().groupby("State").aggregate("Effort", "sum")
+```
+
+**How to prevent**: Always write `aggregate("<field>", "<method>")` — the field is the data you want to aggregate (e.g., `Effort`, `WorkItemId`, `StoryPoints`), the method is the operation (`sum`, `min`, `max`, `average`). For row counting, use `aggregate("$count", alias="Name")`.
+
+---
+
+## Pydantic ValidationError
+
+**What you see**:
+```
+pydantic.ValidationError: 1 validation error for WorkItem
+  Field required [type=missing, input_value={...}, input_type=dict]
+```
+
+**Cause**: Azure DevOps returned a field that the Pydantic model doesn't expect, or stopped returning a required field. This can happen when Microsoft adds new fields to the OData schema.
+
+**What to do**:
+1. Note which fields are causing the error (the message shows the received JSON)
+2. [Open an issue on GitHub](https://github.com/ohmyopencode/odata-python-wrapper/issues) with the full JSON
+3. As a temporary workaround, use `client.get()` instead of the typed model (returns `dict`)
+
+```python
+# Workaround: use get() instead of get_workitem()
+data = await client.get("WorkItems", **{"$filter": "WorkItemId eq 42"})
+print(data["value"][0]["Title"])  # plain dict, no Pydantic validation
+```
+
+---
+
+## ModuleNotFoundError: aioresponses
+
+**What you see**:
+```
+ModuleNotFoundError: No module named 'aioresponses'
+```
+(or similar with `pytest`, `hypothesis`, etc.)
+
+**Cause**: You ran `uv sync` without the `--all-groups` flag, so development dependencies weren't installed.
+
+**What to do**:
+```bash
+uv sync --all-groups
+```
+
+**How to prevent**: Always use `--all-groups` when cloning the project for the first time.
+
+---
+
+## URL too long (HTTP 414)
+
+**What you see**:
+```
+aiohttp.ClientResponseError: 414 URI Too Long
+```
+
+**Cause**: The request URL exceeded the server limit (usually 8192 characters, but Azure DevOps Analytics is stricter).
+
+**What to do**: Nothing — the library handles this automatically. When the URL exceeds 3000 characters (default), `AdoODataClient` converts the request to `POST $batch` with `multipart/mixed`. You can adjust the threshold:
+
+```python
+# Lower threshold: URLs > 2000 chars become POST $batch
+async with AdoODataClient(org=org, project=project, pat=pat, batch_threshold=2000) as client:
+    ...
+```
+
+---
+
+## NameError in tests
+
+**What you see**:
+```
+NameError: name 'asyncio' is not defined
+```
+(or marker error when running `pytest`)
+
+**Cause**: The `pyproject.toml` already has the `asyncio` marker configured, but if you're running outside the configured project, pytest may not recognize it.
+
+**What to do**:
+```bash
+uv run pytest
+```
+(Don't use `pytest` directly — always use `uv run pytest` inside the project.)
+
+---
+
+## VS403483 — groupby grouping expression must evaluate to a property access value
+
+**What you see**:
+```
+VS403483: $apply/groupby grouping expression 'WorkItemId' must evaluate to a property access value.
+```
+(HTTP 400 Bad Request)
+
+**Cause**: Two simultaneous causes, both fixed in F12:
+
+1. **`countdistinct` is blocked by ADO Analytics.** The `countdistinct` function exists in OData, but Azure DevOps Analytics **does not accept it**. Microsoft states future support is planned, but currently it returns an error.
+   - [Documentation: "DON'T use countdistinct aggregation"](https://learn.microsoft.com/en-us/azure/devops/report/extend-analytics/odata-query-guidelines?view=azure-devops)
+
+2. **`aggregate` must be NESTED inside `groupby`, not chained with `/`.** The correct OData syntax is:
+   ```
+   groupby((State, DateValue), aggregate($count as Count, StoryPoints with sum as TotalStoryPoints))
+   ```
+   The incorrect `groupby((...))/aggregate(...)` generates the VS403483 error because, after a standalone `groupby`, only the grouping fields are in scope — the aggregate field (e.g., `WorkItemId`) is not recognized.
+   - [Documentation: OData supported features](https://learn.microsoft.com/en-us/azure/devops/report/extend-analytics/odata-supported-features?view=azure-devops)
+
+**Solution** (the library already implements this since F12):
+
+```python
+# ✅ CORRECT: aggregate inside groupby, using $count instead of countdistinct
+from ado_odata_async.query import Apply, Filter
+
+Apply()
+    .filter(Filter.eq("StateCategory", "Completed"))
+    .groupby("DateSK", "State")
+    .aggregate("$count", alias="Count")
+    .build()
+# → "$apply=filter(StateCategory eq 'Completed')/groupby((DateSK,State),aggregate($count as Count))"
+```
+
+**How to prevent**:
+- Never use `countdistinct` as an aggregation method — use `$count` with `alias` for row counting.
+- The aggregate is automatically nested inside groupby when they are consecutive in the fluent call.
+- If you need distinct counting, use `$count` inside `groupby` with the desired fields in the grouping.
+
+---
+
+## Português (Brasil)
+
+[Português](#english) | **English**
+
 # Solução de problemas
 
 > Cada entrada começa com o **sintoma** (o que você vê na tela). A causa vem depois.
@@ -61,7 +325,7 @@ ado_odata_async.exceptions.BadRequestError: 400 Bad Request
 ```
 (quando consulta `WorkItemSnapshot` sem `$apply`)
 
-**Causa**: O entity set `WorkItemSnapshot` **requer** `$apply` com `groupby`. Um `$filter` simples não é aceito pelo serviço (HR-13, gotcha 4).
+**Causa**: O entity set `WorkItemSnapshot` **requer** `$apply` com `groupby`. Um `$filter` simples não é aceito pelo serviço.
 
 **O que fazer**: Use `$apply` com `groupby((DateSK, ...))`:
 
@@ -223,7 +487,7 @@ VS403483: $apply/groupby grouping expression 'WorkItemId' must evaluate to a pro
 ```
 (HTTP 400 Bad Request)
 
-**Causa**: Duas causas simultâneas, ambas corrigidas na F12:
+**Causa**: Duas causas simultâneas:
 
 1. **`countdistinct` é bloqueado pelo ADO Analytics.** A função `countdistinct` existe no OData, mas o Azure DevOps Analytics **não aceita**. A Microsoft afirma que suporte futuro está planejado, mas hoje o uso retorna erro.
    - [Documentação: "DON'T use countdistinct aggregation"](https://learn.microsoft.com/en-us/azure/devops/report/extend-analytics/odata-query-guidelines?view=azure-devops)
@@ -235,7 +499,7 @@ VS403483: $apply/groupby grouping expression 'WorkItemId' must evaluate to a pro
    A forma incorreta `groupby((...))/aggregate(...)` gera o erro VS403483 porque, após o `groupby` standalone, apenas os campos de agrupamento estão no escopo — o campo do aggregate (ex.: `WorkItemId`) não é reconhecido.
    - [Documentação: OData supported features](https://learn.microsoft.com/en-us/azure/devops/report/extend-analytics/odata-supported-features?view=azure-devops)
 
-**Solução** (a biblioteca já implementa desde a versão com F12):
+**Solução** (a biblioteca já implementa):
 
 ```python
 # ✅ CORRETO: aggregate dentro de groupby, usando $count em vez de countdistinct
@@ -252,4 +516,4 @@ Apply()
 **Como prevenir**:
 - Nunca use `countdistinct` como método de agregação — use `$count` com `alias` para contagem de linhas.
 - O aggregate é automaticamente aninhado dentro do groupby quando são consecutivos na chamada fluente.
-- Se precisar de contagem distinta, use `$count` dentro de `groupby` com os campos de desejados no agrupamento.
+- Se precisar de contagem distinta, use `$count` dentro de `groupby` com os campos desejados no agrupamento.

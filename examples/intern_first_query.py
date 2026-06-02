@@ -1,10 +1,10 @@
-"""Intern's first query: count work items grouped by StateCategory."""
+"""Primeiro consulta do estagiário: contar work items agrupados por StateCategory."""
 
 import asyncio
 import os
 from pathlib import Path
 
-# Load .env from root
+# Carrega .env da raiz
 env_path = Path(".env")
 if env_path.exists():
     try:
@@ -12,7 +12,7 @@ if env_path.exists():
 
         load_dotenv(dotenv_path=env_path)
     except ImportError:
-        # dotenv not available; parse .env manually
+        # dotenv não disponível; analisa .env manualmente
         for line in env_path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if not line or line.startswith("#") or "=" not in line:
@@ -25,12 +25,12 @@ project = os.environ.get("AZURE_DEVOPS_PROJECT") or ""
 pat = os.environ.get("AZURE_DEVOPS_PAT") or ""
 
 if not pat or not org or not project:
-    print("ERROR: missing AZURE_DEVOPS_ORG / AZURE_DEVOPS_PROJECT / AZURE_DEVOPS_PAT in .env")
+    print("ERRO: faltam AZURE_DEVOPS_ORG / AZURE_DEVOPS_PROJECT / AZURE_DEVOPS_PAT no .env")
     exit(1)
 
 
 async def main() -> None:
-    """Fetch count of work items grouped by StateCategory."""
+    """Busca a contagem de work items agrupados por StateCategory."""
     from ado_odata_async import AdoODataClient
     from ado_odata_async.query import Apply
 
@@ -43,16 +43,16 @@ async def main() -> None:
 
     rows = result.get("value", [])
     if not rows:
-        print("No data returned")
+        print("Nenhum dado retornado")
         exit(1)
 
-    print(f"\nWork items count by StateCategory ({len(rows)} categories):\n")
+    print(f"\nContagem de work items por StateCategory ({len(rows)} categorias):\n")
     for row in rows:
-        category = row.get("StateCategory") or "(none)"
+        category = row.get("StateCategory") or "(nenhuma)"
         count = row.get("Count") or 0
         print(f"  {category!s:20s}  {count}")
 
-    print(f"\nTotal rows: {len(rows)}")
+    print(f"\nTotal de linhas: {len(rows)}")
 
 
 asyncio.run(main())

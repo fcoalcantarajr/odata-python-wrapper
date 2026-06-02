@@ -1,3 +1,310 @@
+**English** | [Português](#português-brasil)
+
+# Core concepts
+
+> Audience: CS intern (knows variables/loops/functions, never seen async/await, OData, or REST).
+
+This document explains the concepts you need to understand to use `ado-odata-async` with confidence.
+
+---
+
+## What is OData?
+
+OData (Open Data Protocol) is a standard that lets you query data through URLs — like a database accessible from the web.
+
+**Analogy**: Imagine Azure DevOps as a giant Excel file. OData is like a "query" you type in the address bar to fetch only the rows and columns you need.
+
+In practice, you build a URL with special parameters:
+
+```
+https://analytics.dev.azure.com/my-org/my-project/_odata/v4.0-preview/WorkItems?$top=10&$select=WorkItemId,Title,State&$filter=WorkItemType eq 'Bug'
+```
+
+| Parameter | Meaning | Example |
+|---|---|---|
+| `$filter` | Filters rows (like SQL WHERE) | `State eq 'Active'` |
+| `$select` | Picks columns (like SELECT) | `WorkItemId,Title` |
+| `$top` | Limits results | `$top=10` |
+| `$orderby` | Sorts | `CreatedDate desc` |
+| `$skip` | Skips rows (for pagination) | `$skip=20` |
+| `$expand` | Fetches related data | `$expand=Children` |
+| `$apply` | Groups and aggregates (like GROUP BY) | `groupby((State),aggregate($count as Count))` |
+
+The `ado-odata-async` library builds these URLs for you using the `QueryBuilder` — you don't need to worry about the exact syntax.
+
+---
+
+## Azure DevOps: WorkItems, WorkItemRevisions, and WorkItemSnapshot
+
+Azure Boards exposes three different views of the data. Picking the right one is essential.
+
+### WorkItems
+
+The **current** state of each work item. One row per item.
+
+**When to use**: to see what's open now, who's assigned, current status.
+
+```python
+result = await (
+    client.query("WorkItems")
+    .select("WorkItemId", "Title", "State", "AssignedTo")
+    .top(10)
+    .get()
+)
+```
+
+### WorkItemRevisions
+
+The **complete history** of all changes. Every time someone edits a work item, a new revision is created.
+
+**When to use**: for auditing, to find out who changed what and when.
+
+```python
+result = await (
+    client.query("WorkItemRevisions")
+    .filter(Filter.eq("WorkItemId", 42))
+    .select("WorkItemId", "Title", "RevisedDate", "State")
+    .get()
+)
+```
+
+> **WARNING**: `$expand=Revisions` **does not work** in Analytics OData (it's blocked by the service). Always use the `WorkItemRevisions` entity set directly.
+
+### WorkItemSnapshot
+
+A daily "snapshot": one row per work item per day. Shows each item's state at the end of each day.
+
+**When to use**: to calculate flow metrics over time (cycle time, historical WIP).
+
+> **RULE**: WorkItemSnapshot **requires** `$apply` with `groupby((DateSK, ...))`. A plain `$filter` won't work — the service returns `400 Bad Request`.
+
+```python
+from ado_odata_async.query import Apply
+
+result = await (
+    client.query("WorkItemSnapshot")
+    .apply(
+        Apply()
+        .filter(Filter.eq("StateCategory", "InProgress"))
+        .groupby("DateSK", "State")
+        .aggregate("$count", alias="Count")
+    )
+    .top(10)
+    .get()
+)
+```
+
+### Comparison table
+
+| Feature | WorkItems | WorkItemRevisions | WorkItemSnapshot |
+|---|---|---|---|
+| One row represents | Current state of an item | One change to an item | The item's state on a given day |
+| Volume | Small (1 per item) | Large (many per item) | Medium (1 per item per day) |
+| Used for | "My items" dashboard | Change auditing | Flow metrics |
+| Requires `$apply`? | No | No | **Yes** |
+
+---
+
+## State vs StateCategory
+
+In Azure Boards, each work item has a **State** that the team can customize:
+
+- State `Done` (English) / `Concluído` (PT-BR)
+- State `In Progress` / `Em Andamento`
+- State `To Do` / `A Fazer`
+
+The problem: names change depending on the language and project customization.
+
+The solution: **StateCategory** is a universal classification that works regardless of language:
+
+| StateCategory | Meaning |
+|---|---|
+| `Proposed` | Item was created but hasn't started yet |
+| `InProgress` | Item is being worked on |
+| `Completed` | Item is finished |
+| `Resolved` | Item is resolved but not yet closed |
+| `Removed` | Item was discarded |
+
+**Use StateCategory** in filters instead of State. Example:
+
+```python
+# ✅ Correct (works in any project/language)
+filter_expr = Filter.eq("StateCategory", "Completed")
+
+# ❌ Fragile (only works if the exact state is 'Done')
+filter_expr = Filter.eq("State", "Done")
+```
+
+---
+
+## Pagination (`$top` + @odata.nextLink)
+
+Azure DevOps limits how many results a query returns (usually 200 rows). If you need more, you must **paginate**.
+
+The library offers two ways to paginate:
+
+### 1. Automatic pagination with `paginate()`
+
+```python
+async for page in client.paginate("WorkItems", top=100):
+    for item in page.get("value", []):
+        print(item["WorkItemId"], item["Title"])
+```
+
+`paginate()` handles:
+- Controlling `$skip` / `$top` automatically
+- Following the `@odata.nextLink` when present
+- Stopping when there's no more data
+
+### 2. Manual pagination with `$skip` and `$top`
+
+```python
+page = 0
+while True:
+    result = await (
+        client.query("WorkItems")
+        .select("WorkItemId", "Title")
+        .skip(page * 100)
+        .top(100)
+        .get()
+    )
+    items = result.get("value", [])
+    if not items:
+        break
+    for item in items:
+        print(item["WorkItemId"])
+    page += 1
+```
+
+---
+
+## Flow metrics in 5 minutes
+
+Flow metrics measure how work flows through the team. They're widely used in Kanban and agile methodologies.
+
+### Work item lifecycle
+
+```mermaid
+graph LR
+    A[Proposed] --> B[InProgress]
+    B --> C[Completed]
+    style A fill:#e1f5fe
+    style B fill:#fff3e0
+    style C fill:#e8f5e9
+```
+
+### Cycle time
+
+**Definition**: the time an item takes from when it **started being worked on** (`ActivatedDate`) to when it was **finished** (`ClosedDate`).
+
+**What it measures**: the team's delivery speed.
+
+```python
+# Conceptual example — see docs/cookbook.md for the full code
+from datetime import datetime
+
+# ISO 8601: UTC dates come with "Z" suffix — .replace("Z", "+00:00") makes them Python-readable
+activated = datetime.fromisoformat(item["ActivatedDate"].replace("Z", "+00:00"))
+closed = datetime.fromisoformat(item["ClosedDate"].replace("Z", "+00:00"))
+cycle_time_days = (closed - activated).total_seconds() / 86400
+```
+
+### Lead time
+
+**Definition**: the time from when the item was **created** (`CreatedDate`) to when it was **finished** (`ClosedDate`).
+
+**Difference from cycle time**: lead time includes the time the item spent sitting in the queue before someone started working on it.
+
+### Throughput
+
+**Definition**: how many items are finished in a period (usually per week).
+
+**What it measures**: the team's delivery capacity.
+
+```
+Weekly throughput:
+  Week A: 8 items completed
+  Week B: 12 items completed
+  Week C: 10 items completed
+```
+
+### WIP — Work In Progress
+
+**Definition**: how many items are in progress at a given moment.
+
+**What it measures**: work accumulation. The higher the WIP, the slower the flow.
+
+> WIP (Work In Progress) are the items in `InProgress` state (or equivalent) at a given moment.
+
+### Full diagram
+
+```mermaid
+timeline
+    title Journey of a work item
+    Created : Item created (lead time starts)
+    Activated : Someone started working (cycle time starts)
+    Closed : Item finished (lead time and cycle time end)
+```
+
+---
+
+## Async/await for beginners
+
+If you're used to sequential code (line 1 runs, then line 2, then line 3), `async` might feel strange. Let's simplify.
+
+### The problem
+
+Your code needs to fetch data from the internet. An HTTP request can take 100ms to 5 seconds. In **synchronous** code, the program **stops** and waits:
+
+```
+line 1: fetch data (2 seconds of waiting... program frozen...)
+line 2: process data
+```
+
+During those 2 seconds, the program does nothing else. It's like going to the bank and standing in line unable to do anything while you wait.
+
+### The async/await solution
+
+In **asynchronous** code, while one task waits (network I/O, file, database), other tasks can run:
+
+```
+await line 1: starts fetching data  ──┐
+                                       │  (2 seconds of waiting,
+line 2: processes another calculation  │   but the program continues)
+                                       │
+line 1: response arrived! continues  ←──┘
+```
+
+**The bank analogy**: `await` is like taking a ticket. You hand in the ticket and sit down — you don't stand in line. While your number isn't called, you can read a book, answer emails, etc. When the counter calls your number (`await` completes), you get back up.
+
+### Practical rules
+
+1. **`async def`** before a function means it can use `await` inside.
+2. **`await`** before a call means "wait for this operation to finish, but don't block the program — other things can run in the meantime".
+3. **`asyncio.run(main())`** is the entry point: "run this async function and wait for it to finish".
+4. Everything that uses the network (HTTP, database) MUST be `await`ed — otherwise the program doesn't wait for the response and breaks.
+
+```python
+import asyncio
+
+
+async def my_function() -> None:
+    print("Fetching data...")
+    result = await some_http_fetch()  # ← doesn't block the program
+    print("Data arrived:", result)
+
+
+asyncio.run(my_function())
+```
+
+> **Tip**: if you forget `await`, Python returns an error like `coroutine was never awaited`. It's the most common symptom for beginners with async.
+
+---
+
+## Português (Brasil)
+
+[Português](#english) | **English**
+
 # Conceitos fundamentais
 
 > Público: estagiário de CS (sabe variáveis/loops/funções, nunca viu async/await, OData ou REST).
@@ -99,7 +406,7 @@ result = await (
 | Uma linha representa | Estado atual de um item | Uma alteração no item | O estado do item em um dia |
 | Volume | Pequeno (1 por item) | Grande (muitas por item) | Médio (1 por item por dia) |
 | Usado para | Tela "Meus items" | Auditoria de mudanças | Métricas de fluxo |
-| Requer `$apply`? | Não | Não | **Sim** (HR-13) |
+| Requer `$apply`? | Não | Não | **Sim** |
 
 ---
 
