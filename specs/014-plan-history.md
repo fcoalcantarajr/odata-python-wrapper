@@ -35,7 +35,7 @@ Then the result contains created_date equal to the minimum CreatedDate value
 ```
 Given a list of work items including active (StateCategory != Completed) items
 When I call compute_plan_history with those items
-Then the result contains oldest_card_date equal to the maximum CreatedDate among active items
+Then the result contains oldest_card_date equal to the minimum CreatedDate among active items
 ```
 
 ### AC-3: Compute on_time_rate
