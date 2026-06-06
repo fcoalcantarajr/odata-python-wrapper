@@ -34,7 +34,7 @@ def compute_plan_history(items: list[dict[str, Any]]) -> PlanHistoryResult:
     active_items = [item for item in items if item.get("StateCategory") != "Completed"]
     active_created = [_parse_date(item.get("CreatedDate")) for item in active_items]
     valid_active = [d for d in active_created if d is not None]
-    oldest_card_date = max(valid_active) if valid_active else None
+    oldest_card_date = min(valid_active) if valid_active else None
 
     completed = [item for item in items if item.get("StateCategory") == "Completed"]
     with_target = [

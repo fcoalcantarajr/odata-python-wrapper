@@ -40,14 +40,14 @@ class TestAC1CreatedDate:
 
 
 class TestAC2OldestCardDate:
-    def test_returns_max_created_of_active_items(self) -> None:
+    def test_returns_min_created_of_active_items(self) -> None:
         items = [
             _make_item(1, "2026-01-01", "Completed"),
             _make_item(2, "2026-01-05", "In Progress"),
             _make_item(3, "2026-01-10", "New"),
         ]
         result = compute_plan_history(items)
-        assert result.oldest_card_date == date(2026, 1, 10)
+        assert result.oldest_card_date == date(2026, 1, 5)
 
     def test_all_completed_returns_none(self) -> None:
         items = [
