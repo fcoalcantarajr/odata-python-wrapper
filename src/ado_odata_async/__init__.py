@@ -2,7 +2,10 @@
 
 from importlib.metadata import version as _version
 
+from ado_odata_async.baseline_target import BaselineResult, compute_baseline_metrics
+from ado_odata_async.child_count import compute_child_count, compute_hierarchy_depth
 from ado_odata_async.client import ODATA_VERSION, AdoODataClient
+from ado_odata_async.dependency_graph import fetch_dependency_links
 from ado_odata_async.entities import (
     Area,
     Date,
@@ -24,6 +27,8 @@ from ado_odata_async.exceptions import (
     RateLimitError,
     TransientError,
 )
+from ado_odata_async.flow_times import FlowTimeResult, compute_flow_times
+from ado_odata_async.plan_history import PlanHistoryResult, compute_plan_history
 
 __all__ = [
     "ODATA_VERSION",
@@ -31,9 +36,12 @@ __all__ = [
     "AdoODataError",
     "Area",
     "AuthenticationError",
+    "BaselineResult",
     "BadRequestError",
     "Date",
+    "FlowTimeResult",
     "Iteration",
+    "PlanHistoryResult",
     "Project",
     "RateLimitError",
     "Team",
@@ -45,6 +53,12 @@ __all__ = [
     "WorkItemLink",
     "WorkItemRevisions",
     "WorkItemType",
+    "compute_baseline_metrics",
+    "compute_child_count",
+    "compute_flow_times",
+    "compute_hierarchy_depth",
+    "compute_plan_history",
+    "fetch_dependency_links",
 ]
 
 __version__ = _version(__package__)

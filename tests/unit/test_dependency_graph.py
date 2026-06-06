@@ -200,7 +200,6 @@ async def test_ac6_flag_overdue(fake_pat: str, base_url: str) -> None:
                 ]
             },
         )
-        # Mock WorkItems with overdue target
         m.get(
             re.compile(r".*/WorkItems.*"),
             payload={
@@ -210,7 +209,7 @@ async def test_ac6_flag_overdue(fake_pat: str, base_url: str) -> None:
                         "WorkItemId": 102,
                         "Title": "Card B",
                         "ClosedDate": None,
-                        "TargetDate": "2026-06-01",
+                        "TargetDate": "2026-01-01",
                     },
                 ]
             },
@@ -218,9 +217,45 @@ async def test_ac6_flag_overdue(fake_pat: str, base_url: str) -> None:
 
         async with AdoODataClient(org="myorg", project="myproject", pat=fake_pat) as client:
             result = await fetch_dependency_links(client, [101, 102], flag_overdue=True)
-
-            # Verify risk flag
             assert "overdue_blocker:102" in result[101]["risk_flags"]
+
+
+@pytest.mark.asyncio
+async def test_ac6_not_overdue_when_future_target(fake_pat: str, base_url: str) -> None:
+    """AC-6b: Blocker with future TargetDate is NOT flagged overdue."""
+    with aioresponses() as m:
+        m.get(
+            re.compile(r".*/WorkItemLinks.*"),
+            payload={
+                "value": [
+                    {
+                        "WorkItemLinkId": 1,
+                        "SourceWorkItemId": 101,
+                        "TargetWorkItemId": 102,
+                        "LinkType": "Successor",
+                        "LinkTypeReferenceName": "System.LinkTypes.Dependency-Forward",
+                    },
+                ]
+            },
+        )
+        m.get(
+            re.compile(r".*/WorkItems.*"),
+            payload={
+                "value": [
+                    {"WorkItemId": 101, "Title": "Card A"},
+                    {
+                        "WorkItemId": 102,
+                        "Title": "Card B",
+                        "ClosedDate": None,
+                        "TargetDate": "2099-12-31",
+                    },
+                ]
+            },
+        )
+
+        async with AdoODataClient(org="myorg", project="myproject", pat=fake_pat) as client:
+            result = await fetch_dependency_links(client, [101, 102], flag_overdue=True)
+            assert result[101]["risk_flags"] == []
 
 
 # AC-7: Reusable component for hierarchy link type
@@ -261,3 +296,41 @@ async def test_ac7_hierarchy_link_type(fake_pat: str, base_url: str) -> None:
             # Should only include hierarchy link, not dependency
             assert 102 in result[101]["blocks"]
             assert 103 not in result[101]["blocks"]
+
+
+# AC-8: Handle links referencing external work items
+@pytest.mark.asyncio
+async def test_ac8_external_link_targets(fake_pat: str, base_url: str) -> None:
+    """AC-8: Links referencing work items outside query batch should not crash."""
+    with aioresponses() as m:
+        m.get(
+            re.compile(r".*/WorkItemLinks.*"),
+            payload={
+                "value": [
+                    {
+                        "WorkItemLinkId": 1,
+                        "SourceWorkItemId": 101,
+                        "TargetWorkItemId": 999,
+                        "LinkType": "Successor",
+                        "LinkTypeReferenceName": "System.LinkTypes.Dependency-Forward",
+                    },
+                    {
+                        "WorkItemLinkId": 2,
+                        "SourceWorkItemId": 888,
+                        "TargetWorkItemId": 102,
+                        "LinkType": "Predecessor",
+                        "LinkTypeReferenceName": "System.LinkTypes.Dependency-Reverse",
+                    },
+                ]
+            },
+        )
+
+        async with AdoODataClient(org="myorg", project="myproject", pat=fake_pat) as client:
+            result = await fetch_dependency_links(client, [101, 102])
+
+            assert 101 in result
+            assert 102 in result
+            assert result[101]["blocks"] == [999]
+            assert result[102]["depends_on"] == [888]
+            assert 999 not in result
+            assert 888 not in result

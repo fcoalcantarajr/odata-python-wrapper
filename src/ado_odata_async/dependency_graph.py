@@ -100,8 +100,10 @@ async def fetch_dependency_links(
                 continue
             source: int = link["SourceWorkItemId"]
             target: int = link["TargetWorkItemId"]
-            result[source]["blocks"].append(target)
-            result[target]["depends_on"].append(source)
+            if source in result:
+                result[source]["blocks"].append(target)
+            if target in result:
+                result[target]["depends_on"].append(source)
     if resolve_titles or flag_overdue:
         items = await _fetch_workitems(client, list(result.keys()))
         titles: dict[int, str] = {i["WorkItemId"]: i.get("Title", "") for i in items}
