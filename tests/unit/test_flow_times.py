@@ -78,3 +78,27 @@ class TestAC4StillInQueue:
         assert result.time_in_queue_days is None
         assert result.time_in_progress_days == 0
         assert result.state_history == []
+
+
+class TestISODateTimeFormat:
+    def test_handles_changeddate_with_time_component(self) -> None:
+        revisions = [
+            _rev("New", "2026-01-01T08:00:00Z"),
+            _rev("Active", "2026-01-08T14:30:00Z"),
+            _rev("Resolved", "2026-01-10T10:00:00Z"),
+        ]
+        result = compute_flow_times(revisions)
+        assert result.time_in_queue_days == 7
+        assert result.state_history == [
+            ("New", date(2026, 1, 1)),
+            ("Active", date(2026, 1, 8)),
+            ("Resolved", date(2026, 1, 10)),
+        ]
+
+    def test_handles_mixed_date_formats(self) -> None:
+        revisions = [
+            _rev("New", "2026-01-01"),
+            _rev("Active", "2026-01-08T14:30:00Z"),
+        ]
+        result = compute_flow_times(revisions)
+        assert result.time_in_queue_days == 7

@@ -97,3 +97,21 @@ class TestAC5MissingTargetDate:
         ]
         result = compute_plan_history(items)
         assert result.on_time_rate == 1.0
+
+
+class TestISODateTimeFormat:
+    def test_handles_datetime_with_time_component(self) -> None:
+        items = [
+            _make_item(1, "2026-01-15T00:00:00Z", "In Progress"),
+            _make_item(2, "2026-01-10T12:30:00Z", "Completed", "2026-02-01", "2026-02-05"),
+        ]
+        result = compute_plan_history(items)
+        assert result.created_date == date(2026, 1, 10)
+
+    def test_handles_mixed_formats(self) -> None:
+        items = [
+            _make_item(1, "2026-01-15T00:00:00Z", "In Progress"),
+            _make_item(2, "2026-01-10", "Completed", "2026-02-01", "2026-02-05"),
+        ]
+        result = compute_plan_history(items)
+        assert result.created_date == date(2026, 1, 10)

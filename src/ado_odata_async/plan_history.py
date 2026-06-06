@@ -18,7 +18,8 @@ def _parse_date(value: str | None) -> date | None:
     if value is None:
         return None
     try:
-        return date.fromisoformat(value)
+        date_part = value[:10] if "T" in value else value
+        return date.fromisoformat(date_part)
     except (ValueError, TypeError):
         return None
 

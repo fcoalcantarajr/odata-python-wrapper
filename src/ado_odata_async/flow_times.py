@@ -26,7 +26,8 @@ def compute_flow_times(revisions: list[dict[str, Any]]) -> FlowTimeResult:
         changed = rev.get("ChangedDate")
         if changed is not None:
             try:
-                history.append((state, date.fromisoformat(changed)))
+                date_part = changed[:10] if isinstance(changed, str) and "T" in changed else changed
+                history.append((state, date.fromisoformat(date_part)))
             except (ValueError, TypeError):
                 continue
 
