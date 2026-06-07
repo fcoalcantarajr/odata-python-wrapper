@@ -12,6 +12,7 @@ import aiohttp
 from ado_odata_async._http import parse_response
 from ado_odata_async.auth import build_basic_auth, mask_pat
 from ado_odata_async.entities import WorkItem
+from ado_odata_async.exceptions import TransientError
 from ado_odata_async.pagination import iter_pages
 from ado_odata_async.query._batch import (
     _BATCH_CONTENT_TYPE,
@@ -103,6 +104,16 @@ class AdoODataClient:
         if query_str:
             url_str = f"{url_str}?{query_str}"
 
+        return await self._execute_request(url_str)
+
+    async def _execute_request(self, url_str: str) -> dict[str, Any]:
+        """Execute an HTTP request, switching to POST $batch if URL is too long.
+
+        Handles the batch/GET branching and response parsing. Called by ``get()``
+        and directly for ``@odata.nextLink`` follow-through.
+        """
+        assert self._session is not None  # caller guarantees
+
         method, final_url = maybe_batch(
             "GET", url_str, service_root=self._service_root, threshold=self._batch_threshold
         )
@@ -124,8 +135,18 @@ class AdoODataClient:
                 async with self._session.get(final_url) as resp:
                     return await parse_response(resp)
         except aiohttp.ClientError as exc:
-            from ado_odata_async.exceptions import TransientError
+            raise TransientError(f"Connection error: {exc}") from exc
 
+    async def _get_raw(self, url: str) -> dict[str, Any]:
+        """Fetch a raw URL directly (for @odata.nextLink follow-through).
+
+        Bypasses URL construction and batch decision — the URL is used as-is.
+        """
+        assert self._session is not None  # caller guarantees
+        try:
+            async with self._session.get(url) as resp:
+                return await parse_response(resp)
+        except aiohttp.ClientError as exc:
             raise TransientError(f"Connection error: {exc}") from exc
 
     async def get_workitem(self, id_: int) -> WorkItem:

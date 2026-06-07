@@ -6,8 +6,6 @@ import logging
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 
-from ado_odata_async._http import parse_response
-
 if TYPE_CHECKING:
     from ado_odata_async.client import AdoODataClient
 
@@ -38,12 +36,7 @@ async def iter_pages(
 
     while True:
         if next_link_url:
-            # Follow @odata.nextLink; parse_response maps errors to typed exceptions.
-            if client._session is None:
-                msg = "client session is closed — pagination must complete within context"
-                raise RuntimeError(msg)
-            async with client._session.get(next_link_url) as resp:
-                data = await parse_response(resp)
+            data = await client._get_raw(next_link_url)
         else:
             # Build query params in canonical OData order (HR-9):
             #   $apply → $filter → $orderby → $expand → $select → $skip → $top
