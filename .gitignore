@@ -69,3 +69,4 @@ docs/_scratch/
 *,cover
 *.cover
 .omo/run-continuation/
+tmp_refactor_baseline.txt
