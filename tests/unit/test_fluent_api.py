@@ -163,3 +163,9 @@ def test_paginate_top_zero_no_client_raises_value_error() -> None:
     builder = QueryBuilder()  # no client
     with pytest.raises(ValueError, match="top must be >= 1"):
         builder.paginate(top=0)
+
+
+def test_paginate_top_negative_raises_value_error() -> None:
+    builder = QueryBuilder()
+    with pytest.raises(ValueError, match="top must be >= 1"):
+        builder.paginate(top=-1)

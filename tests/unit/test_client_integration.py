@@ -248,5 +248,55 @@ async def test_get_raw_retries_on_transient_error(
                 await c._get_raw("https://example.com/nextLink")
             assert "connection reset" in str(exc.value)
             assert (
-                mock_session.get.call_count > 1
-            ), "Expected retry to invoke _session.get multiple times"
+                mock_session.get.call_count == 3
+            ), f"Expected 3 attempts (max_attempts), got {mock_session.get.call_count}"
+
+
+# ── client.paginate() with query dict ────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_paginate_with_query_dict(
+    fake_pat: str,
+    fake_org: str,
+    fake_project: str,
+) -> None:
+    """paginate() passes query dict to first page request."""
+    with aioresponses() as m:
+        m.get(
+            re.compile(r".*WorkItems.*"),
+            payload={"value": [{"Id": 1}], "@odata.count": 1},
+        )
+        async with AdoODataClient(
+            org=fake_org,
+            project=fake_project,
+            pat=fake_pat,
+        ) as c:
+            pages = []
+            async for page in c.paginate("WorkItems", top=10, query={"$select": "Id,Title"}):
+                pages.append(page)
+            assert len(pages) == 1
+            assert pages[0]["value"][0]["Id"] == 1
+
+
+# ── client.query() returns QueryBuilder ──────────────────────
+
+
+@pytest.mark.asyncio
+async def test_client_query_returns_builder(
+    fake_pat: str,
+    fake_org: str,
+    fake_project: str,
+) -> None:
+    """client.query() returns a QueryBuilder bound to this client."""
+    from ado_odata_async.query._builder import QueryBuilder
+
+    async with AdoODataClient(
+        org=fake_org,
+        project=fake_project,
+        pat=fake_pat,
+    ) as c:
+        b = c.query("WorkItems")
+        assert isinstance(b, QueryBuilder)
+        assert b._entity_set == "WorkItems"
+        assert b._client is c

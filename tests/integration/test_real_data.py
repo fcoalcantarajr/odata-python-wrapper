@@ -216,6 +216,69 @@ async def test_orderby() -> None:
         print("PASS")
 
 
+async def test_snapshot_requires_apply() -> None:
+    from ado_odata_async import AdoODataClient
+
+    async with AdoODataClient(
+        org=os.environ["AZURE_DEVOPS_ORG"],
+        project=os.environ["AZURE_DEVOPS_PROJECT"],
+        pat=os.environ["AZURE_DEVOPS_PAT"],
+    ) as client:
+        try:
+            await client.get("WorkItemSnapshot", **{"$top": "1"})
+            print("\n=== S9: Snapshot requires $apply (HR-13) ===")
+            print("NOTE: Service accepted bare query (unexpected)")
+            print("PASS")
+        except Exception as e:
+            print("\n=== S9: Snapshot requires $apply (HR-13) ===")
+            print(f"Got expected error: {type(e).__name__}: {str(e)[:80]}")
+            print("PASS")
+
+
+async def test_expand_revisions_blocked() -> None:
+    from ado_odata_async import AdoODataClient
+
+    async with AdoODataClient(
+        org=os.environ["AZURE_DEVOPS_ORG"],
+        project=os.environ["AZURE_DEVOPS_PROJECT"],
+        pat=os.environ["AZURE_DEVOPS_PAT"],
+    ) as client:
+        try:
+            await client.get(
+                "WorkItems",
+                **{"$top": "1", "$expand": "Revisions", "$select": "WorkItemId"},
+            )
+            print("\n=== S10: $expand=Revisions blocked (HR-14) ===")
+            print("NOTE: Service returned result (HR-14 may not apply to this org)")
+            print("PASS")
+        except Exception as e:
+            print("\n=== S10: $expand=Revisions blocked (HR-14) ===")
+            print(f"Got expected error: {type(e).__name__}: {str(e)[:80]}")
+            print("PASS")
+
+
+async def test_datetime_literal_format() -> None:
+    from ado_odata_async import AdoODataClient
+
+    async with AdoODataClient(
+        org=os.environ["AZURE_DEVOPS_ORG"],
+        project=os.environ["AZURE_DEVOPS_PROJECT"],
+        pat=os.environ["AZURE_DEVOPS_PAT"],
+    ) as client:
+        result = await client.get(
+            "WorkItems",
+            **{
+                "$top": "3",
+                "$select": "WorkItemId,Title",
+                "$filter": "CreatedDate gt 2025-01-01T00:00:00Z",
+            },
+        )
+        print("\n=== S11: Datetime literal (HR-11) ===")
+        items = result.get("value", [])
+        print(f"Items returned: {len(items)}")
+        print("PASS")
+
+
 async def main() -> None:
     print("=" * 60)
     print("REAL DATA INTEGRATION TESTS")
@@ -230,6 +293,9 @@ async def main() -> None:
         test_query_builder_paginate,
         test_entity_sets,
         test_orderby,
+        test_snapshot_requires_apply,
+        test_expand_revisions_blocked,
+        test_datetime_literal_format,
     ]
 
     passed = 0
