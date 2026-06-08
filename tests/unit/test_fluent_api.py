@@ -146,3 +146,20 @@ def test_paginate_invalid_top_raises() -> None:
     builder = QueryBuilder(client=client, entity_set="WorkItems")
     with pytest.raises(ValueError, match="top must be >= 1"):
         builder.paginate(top=0)
+
+
+def test_select_with_list_argument() -> None:
+    """select() accepts a list as a single argument (line 103-104 in _builder.py)."""
+    builder = QueryBuilder().select(["Id", "Title", "State"])
+    assert str(builder) == "$select=Id%2CTitle%2CState"
+
+
+def test_paginate_top_zero_no_client_raises_value_error() -> None:
+    """BUG-001 regression: top=0 must raise ValueError even when client is None.
+
+    Before the fix, RuntimeError fired first because the client check
+    came before the top validation.
+    """
+    builder = QueryBuilder()  # no client
+    with pytest.raises(ValueError, match="top must be >= 1"):
+        builder.paginate(top=0)

@@ -153,9 +153,9 @@ class QueryBuilder:
             RuntimeError: If builder has no client or entity set.
             ValueError: If *top* < 1 or snapshot entity set lacks groupby (HR-13).
         """
-        if self._client is None or not self._entity_set:
-            raise RuntimeError("QueryBuilder requires client and entity_set to paginate")
         if top < 1:
             raise ValueError("top must be >= 1")
+        if self._client is None or not self._entity_set:
+            raise RuntimeError("QueryBuilder requires client and entity_set to paginate")
         self._validate_hr13()
         return self._client.paginate(self._entity_set, top=top, query=self._query_dict())

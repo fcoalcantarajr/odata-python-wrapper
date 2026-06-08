@@ -137,10 +137,12 @@ class AdoODataClient:
         except aiohttp.ClientError as exc:
             raise TransientError(f"Connection error: {exc}") from exc
 
+    @with_retry
     async def _get_raw(self, url: str) -> dict[str, Any]:
         """Fetch a raw URL directly (for @odata.nextLink follow-through).
 
         Bypasses URL construction and batch decision — the URL is used as-is.
+        Retries on transient errors, matching ``get()`` behavior (HR-15).
         """
         assert self._session is not None  # caller guarantees
         try:

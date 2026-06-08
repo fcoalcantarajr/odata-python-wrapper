@@ -14,6 +14,8 @@ Each test maps to one AC from specs/008-batch-post.md:
 
 from __future__ import annotations
 
+import pytest
+
 from ado_odata_async.query._batch import maybe_batch, parse_batch_response
 
 
@@ -101,3 +103,27 @@ def test_ac5_exact_threshold_uses_get() -> None:
     method, result_url = maybe_batch("GET", url, threshold=3000)
     assert method == "GET"
     assert result_url == url
+
+
+def test_parse_batch_empty_parts() -> None:
+    """Empty parts between boundaries are skipped; no 200 part → ValueError."""
+    raw = b"--batchresponse_abc123\r\n" b"\r\n" b"   \r\n" b"--batchresponse_abc123--\r\n"
+    with pytest.raises(ValueError, match="No HTTP 200"):
+        parse_batch_response(raw)
+
+
+def test_parse_batch_no_200_part() -> None:
+    """Non-200 parts are skipped; no 200 part found → ValueError."""
+    raw = (
+        b"--batchresponse_abc123\r\n"
+        b"Content-Type: application/http\r\n"
+        b"Content-Transfer-Encoding: binary\r\n"
+        b"\r\n"
+        b"HTTP/1.1 404 Not Found\r\n"
+        b"Content-Type: application/json\r\n"
+        b"\r\n"
+        b'{"error": "not found"}\r\n'
+        b"--batchresponse_abc123--\r\n"
+    )
+    with pytest.raises(ValueError, match="No HTTP 200"):
+        parse_batch_response(raw)

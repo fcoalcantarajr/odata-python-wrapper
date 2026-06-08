@@ -20,7 +20,9 @@ Each test maps to one AC from specs/005-filter-dsl.md:
 
 from __future__ import annotations
 
-from ado_odata_async.query._filter import Filter
+import pytest
+
+from ado_odata_async.query._filter import Filter, _NodeKind
 
 
 def test_ac1_eq_string_value() -> None:
@@ -169,3 +171,42 @@ def test_ac10_ne_comparator() -> None:
     """
     result = Filter.ne("State", "Deleted").build()
     assert result == "State ne 'Deleted'"
+
+
+def test_format_value_bool_true() -> None:
+    """_format_value: bool True → "true" (lowercase)."""
+    result = Filter.eq("Active", True).build()
+    assert result == "Active eq true"
+
+
+def test_format_value_bool_false() -> None:
+    """_format_value: bool False → "false" (lowercase)."""
+    result = Filter.eq("Active", False).build()
+    assert result == "Active eq false"
+
+
+def test_format_value_int() -> None:
+    """_format_value: int → plain string."""
+    result = Filter.gt("Id", 42).build()
+    assert result == "Id gt 42"
+
+
+def test_format_value_float() -> None:
+    """_format_value: float → plain string."""
+    result = Filter.gt("Score", 3.14).build()
+    assert result == "Score gt 3.14"
+
+
+def test_ge_lt_le_comparators() -> None:
+    """ge, lt, le factory methods produce correct OData operators."""
+    assert Filter.ge("X", 1).build() == "X ge 1"
+    assert Filter.lt("X", 10).build() == "X lt 10"
+    assert Filter.le("X", 5).build() == "X le 5"
+
+
+def test_unknown_node_kind_raises() -> None:
+    """build() raises ValueError for unknown _NodeKind."""
+    f = Filter(_NodeKind.COMPARISON, field="X", operator="eq", value=1)
+    f._kind = "BOGUS"  # type: ignore[assignment]
+    with pytest.raises(ValueError, match="Unknown node kind"):
+        f.build()

@@ -213,3 +213,40 @@ def test_build_batch_get_body_structure() -> None:
     assert "Host: analytics.dev.azure.com" in body
     # No changeset wrapping for GET per OData 4.0 spec
     assert "changeset_ado_odata_async" not in body
+
+
+# ── _get_raw retry coverage (Oracle-identified gap) ─────────
+
+
+@pytest.mark.asyncio
+async def test_get_raw_retries_on_transient_error(
+    fake_pat: str,
+    fake_org: str,
+    fake_project: str,
+) -> None:
+    """_get_raw (nextLink follow-through) retries on TransientError.
+
+    Before the fix, _get_raw lacked @with_retry so pagination
+    follow-through requests would fail on first transient error.
+    """
+    from unittest.mock import AsyncMock, patch
+
+    import aiohttp
+
+    client_error = aiohttp.ClientError("connection reset")
+
+    async with AdoODataClient(
+        org=fake_org,
+        project=fake_project,
+        pat=fake_pat,
+    ) as c:
+        with patch.object(c, "_session") as mock_session:
+            mock_session.get.return_value.__aenter__ = AsyncMock(side_effect=client_error)
+            mock_session.get.return_value.__aexit__ = AsyncMock(return_value=False)
+
+            with pytest.raises(TransientError) as exc:
+                await c._get_raw("https://example.com/nextLink")
+            assert "connection reset" in str(exc.value)
+            assert (
+                mock_session.get.call_count > 1
+            ), "Expected retry to invoke _session.get multiple times"
