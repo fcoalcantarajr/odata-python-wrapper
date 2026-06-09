@@ -73,7 +73,7 @@ def test_ac6_frozen_strict_preserved() -> None:
     """AC-6: Frozen+strict contract preserved for custom types."""
     instance = WorkItem(WorkItemId=1, Title="x", WorkItemType="Initiative")
     # Frozen check
-    with pytest.raises(TypeError, match="immutable|frozen"):
+    with pytest.raises(TypeError, match=r"immutable|frozen"):
         instance.WorkItemType = "Spike"
     # Extra field check
     with pytest.raises(ValidationError, match="Extra inputs are not permitted"):

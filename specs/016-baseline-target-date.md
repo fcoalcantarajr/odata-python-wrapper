@@ -5,7 +5,7 @@
 
 - id: SPEC-016
 - slug: baseline-target-date
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-06-05
 - owner: @sisyphus
 

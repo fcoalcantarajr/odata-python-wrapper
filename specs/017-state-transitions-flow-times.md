@@ -5,7 +5,7 @@
 
 - id: SPEC-017
 - slug: state-transitions-flow-times
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-06-05
 - owner: @sisyphus
 

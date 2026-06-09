@@ -95,6 +95,30 @@ class AdoODataClient:
 
     @with_retry
     async def get(self, entity_set: str, **params: str) -> dict[str, Any]:
+        """Execute an OData GET request with optional query parameters.
+
+        Constructs the full URL with serialized query options (respecting
+        OData option order: $apply → $filter → $orderby → $expand →
+        $select → $skip → $top per HR-9). Automatically switches to
+        POST $batch multipart/mixed if the URL exceeds the batch threshold
+        (default 3000 chars, HR-10).
+
+        Args:
+            entity_set: OData entity set name (e.g. "WorkItems",
+                "WorkItemRevisions").
+            **params: Query options as keyword arguments (e.g.
+                $filter="State eq 'Active'", $top="100").
+
+        Returns:
+            Parsed JSON response dict from the OData service.
+
+        Raises:
+            RuntimeError: If called outside an async context manager
+                (session not initialized).
+            TransientError: On connection errors (wrapped from aiohttp).
+            AuthenticationError: On HTTP 203 with text/html (HR-15,
+                HR-8 gotcha 8) — not retried.
+        """
         if self._session is None:
             raise RuntimeError(
                 "client session is closed — .get() must be called within 'async with' context"

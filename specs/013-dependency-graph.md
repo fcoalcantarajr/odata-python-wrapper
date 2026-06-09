@@ -5,7 +5,7 @@
 
 - id: SPEC-013
 - slug: dependency-graph
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-06-05
 - owner: @opencode
 

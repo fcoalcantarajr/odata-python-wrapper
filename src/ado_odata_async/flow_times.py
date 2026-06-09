@@ -11,12 +11,40 @@ ACTIVE_STATES = frozenset({"Active", "In Progress", "Committed", "Design"})
 
 @dataclass(frozen=True, slots=True)
 class FlowTimeResult:
+    """Flow time metrics computed from work item revision history.
+
+    Attributes:
+        state_history: Chronologically sorted list of (State, ChangedDate)
+            tuples extracted from revisions. Empty if no valid revisions.
+        time_in_queue_days: Days from creation (first revision) to first
+            transition into an active state (Active, In Progress, Committed,
+            Design). None if never entered an active state.
+        time_in_progress_days: Total days spent in active states. Sums
+            durations of contiguous active-state periods. 0 if never active.
+    """
+
     state_history: list[tuple[str, date]] = field(default_factory=list)
     time_in_queue_days: int | None = None
     time_in_progress_days: int = 0
 
 
 def compute_flow_times(revisions: list[dict[str, Any]]) -> FlowTimeResult:
+    """Compute state transition history and flow times from revision history.
+
+    Parses revisions for State and ChangedDate, builds a sorted timeline,
+    then calculates:
+    - Queue time: days from creation to first active state
+    - Progress time: total days spent in active states
+
+    Args:
+        revisions: List of revision dicts with "State" and "ChangedDate"
+            keys. ChangedDate should be ISO 8601 string (with or without
+            time component).
+
+    Returns:
+        FlowTimeResult with state_history, time_in_queue_days, and
+        time_in_progress_days.
+    """
     if not revisions:
         return FlowTimeResult()
 

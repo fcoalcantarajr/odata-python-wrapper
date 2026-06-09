@@ -9,6 +9,18 @@ from typing import Any
 
 @dataclass(frozen=True, slots=True)
 class PlanHistoryResult:
+    """Delivery predictability metrics computed from work item data.
+
+    Attributes:
+        created_date: Earliest CreatedDate across all items (earliest
+            work item creation in the dataset).
+        oldest_card_date: Earliest CreatedDate among active (non-Completed)
+            items. None if no active items exist.
+        on_time_rate: Fraction of completed items with TargetDate that
+            were completed on or before their TargetDate. 0.0 if no
+            completed items have both TargetDate and CompletedDate.
+    """
+
     created_date: date | None
     oldest_card_date: date | None
     on_time_rate: float
@@ -25,6 +37,21 @@ def _parse_date(value: str | None) -> date | None:
 
 
 def compute_plan_history(items: list[dict[str, Any]]) -> PlanHistoryResult:
+    """Compute delivery predictability metrics from work item data.
+
+    Calculates three metrics:
+    - Earliest creation date across all items
+    - Earliest creation date among active (non-Completed) items
+    - On-time completion rate for completed items with TargetDate
+
+    Args:
+        items: List of work item dicts with keys like "CreatedDate",
+            "StateCategory", "TargetDate", "CompletedDate".
+
+    Returns:
+        PlanHistoryResult with created_date, oldest_card_date, and
+        on_time_rate (0.0 to 1.0).
+    """
     if not items:
         return PlanHistoryResult(None, None, 0.0)
 

@@ -9,7 +9,7 @@
 
 ## Single source of truth
 
-1. **`AGENTS.md`** ([AGENTS.md](AGENTS.md)) — regras, stack, gotchas, DoD. Sempre a primeira leitura.
+1. **`AGENTS.md`** ([AGENTS.md](../AGENTS.md)) — regras, stack, gotchas, DoD. Sempre a primeira leitura.
 2. **`pyproject.toml`** — versão do package (lida via `importlib.metadata.version`). Nenhum outro lugar duplica.
 3. **`specs/`** — backlog e specs aprovadas. Nenhuma implementação sem spec aprovada.
 4. **`docs/decisions.md`** — ADRs registrados. Vale mais que conversa de Slack.

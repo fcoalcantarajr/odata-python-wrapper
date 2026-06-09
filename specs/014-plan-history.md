@@ -5,7 +5,7 @@
 
 - id: SPEC-014
 - slug: plan-history
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-06-05
 - owner: @sisyphus
 

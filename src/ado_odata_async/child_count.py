@@ -6,6 +6,19 @@ MAX_DEPTH = 100
 
 
 def compute_child_count(links: list[dict[str, int]]) -> dict[int, int]:
+    """Count direct children per parent from WorkItemLinks data.
+
+    Iterates over link records and increments a counter for each
+    SourceWorkItemId (parent).
+
+    Args:
+        links: List of link dicts with "SourceWorkItemId" and
+            "TargetWorkItemId" integer keys.
+
+    Returns:
+        Dict mapping parent WorkItemId to its direct child count.
+        Parents with no children are not included.
+    """
     counts: dict[int, int] = {}
     for link in links:
         parent = link["SourceWorkItemId"]
@@ -14,6 +27,21 @@ def compute_child_count(links: list[dict[str, int]]) -> dict[int, int]:
 
 
 def compute_hierarchy_depth(links: list[dict[str, int]]) -> dict[int, int]:
+    """Compute depth from root for each node in a hierarchy DAG.
+
+    Builds an adjacency list from links, identifies root nodes (those
+    that are never a TargetWorkItemId), then performs iterative DFS
+    to assign depth. Depth is capped at MAX_DEPTH (100).
+
+    Args:
+        links: List of link dicts with "SourceWorkItemId" and
+            "TargetWorkItemId" integer keys.
+
+    Returns:
+        Dict mapping every WorkItemId in the link set to its depth
+        from the nearest root. Roots have depth 0. Nodes not reachable
+        from any root get depth 0.
+    """
     if not links:
         return {}
 

@@ -5,7 +5,7 @@
 
 - id: SPEC-015
 - slug: child-count-hierarchy-depth
-- status: DRAFT
+- status: IMPLEMENTED
 - created: 2026-06-05
 - owner: @sisyphus
 

@@ -50,7 +50,7 @@ def test_ac2_simple_groupby_still_passes() -> None:
 # ===================================================================
 def test_ac3_missing_required_nested_raises() -> None:
     """AC-3: Missing DateSK in nested form raises ValueError."""
-    with pytest.raises(ValueError, match="requires groupby.DateSK."):
+    with pytest.raises(ValueError, match=r"requires groupby.DateSK"):
         _check_snapshot_groupby(
             SNAPSHOT,
             "groupby((State),aggregate(Count with sum as Total))",
@@ -62,7 +62,7 @@ def test_ac3_missing_required_nested_raises() -> None:
 # ===================================================================
 def test_ac4_missing_required_simple_raises() -> None:
     """AC-4: Missing DateSK in simple form raises ValueError."""
-    with pytest.raises(ValueError, match="requires groupby.DateSK."):
+    with pytest.raises(ValueError, match=r"requires groupby.DateSK"):
         _check_snapshot_groupby(SNAPSHOT, "groupby((State))")
 
 

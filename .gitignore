@@ -46,6 +46,7 @@ session-ses_*.md
 
 # Audit scratch
 docs/_scratch/
+docs/_review/
 
 # Quarantine session state
 .omo/run-continuation/

@@ -19,6 +19,7 @@ Async Python client for Azure DevOps Analytics OData.
 - [Quickstart](#quickstart)
 - [Example output](#example-output)
 - [Usage](#usage)
+- [Flow Metrics & Delivery Analytics](#flow-metrics--delivery-analytics)
 - [Docs index](#docs-index)
 - [Troubleshooting](#troubleshooting)
 - [License](#license)
@@ -184,6 +185,149 @@ async for page in client.query("WorkItems").select("WorkItemId", "Title").pagina
 
 ---
 
+## Flow Metrics & Delivery Analytics
+
+Beyond raw OData queries, the library provides compute functions for delivery analytics. These functions work on data you have already fetched (e.g. via `client.get()` or `paginate()`).
+
+### Plan History — `compute_plan_history`
+
+```python
+from ado_odata_async import compute_plan_history
+
+items = [
+    {"CreatedDate": "2025-01-10", "StateCategory": "Completed",
+     "TargetDate": "2025-06-30", "CompletedDate": "2025-06-15"},
+    {"CreatedDate": "2025-02-01", "StateCategory": "InProgress",
+     "TargetDate": None, "CompletedDate": None},
+]
+
+result = compute_plan_history(items)
+print(result.created_date)       # 2025-01-10
+print(result.oldest_card_date)   # 2025-02-01
+print(result.on_time_rate)       # 1.0
+```
+
+`PlanHistoryResult` has three fields:
+- `created_date` — earliest `CreatedDate` across all items
+- `oldest_card_date` — earliest `CreatedDate` among active (non-Completed) items, or `None`
+- `on_time_rate` — fraction of completed items with a `TargetDate` that finished on or before target (0.0 to 1.0)
+
+### Baseline — `compute_baseline_metrics`
+
+Detects replanning by examining `TargetDate` changes across revision history:
+
+```python
+from ado_odata_async import compute_baseline_metrics
+
+revisions = [
+    {"TargetDate": "2025-06-30"},
+    {"TargetDate": "2025-07-15"},
+    {"TargetDate": "2025-07-15"},
+]
+
+result = compute_baseline_metrics(revisions)
+print(result.original_target_date)  # "2025-06-30"
+print(result.target_date_changes)   # 1
+print(result.replanned)             # True
+```
+
+`BaselineResult` has three fields:
+- `original_target_date` — first `TargetDate` value in chronological order, or `None`
+- `target_date_changes` — count of changes between consecutive revisions
+- `replanned` — `True` when `target_date_changes > 0`
+
+### Flow Times — `compute_flow_times`
+
+Calculates queue time and progress time from revision history:
+
+```python
+from ado_odata_async import compute_flow_times
+
+revisions = [
+    {"State": "New", "ChangedDate": "2025-01-10"},
+    {"State": "Active", "ChangedDate": "2025-01-15"},
+    {"State": "Resolved", "ChangedDate": "2025-01-20"},
+    {"State": "Closed", "ChangedDate": "2025-01-22"},
+]
+
+result = compute_flow_times(revisions)
+print(result.time_in_queue_days)      # 5
+print(result.time_in_progress_days)   # 5
+print(result.state_history[0])        # ("New", date(2025, 1, 10))
+```
+
+`FlowTimeResult` has three fields:
+- `state_history` — sorted list of `(State, ChangedDate)` tuples
+- `time_in_queue_days` — days from creation to first active state, or `None`
+- `time_in_progress_days` — total days spent in active states
+
+Active states recognized: `["Active", "In Progress", "Committed", "Design"]`.
+
+### Child Count — `compute_child_count`
+
+Counts direct children per parent from `WorkItemLinks` data:
+
+```python
+from ado_odata_async import compute_child_count
+
+links = [
+    {"SourceWorkItemId": 100, "TargetWorkItemId": 101},
+    {"SourceWorkItemId": 100, "TargetWorkItemId": 102},
+]
+
+counts = compute_child_count(links)
+print(counts)  # {100: 2}
+```
+
+### Hierarchy Depth — `compute_hierarchy_depth`
+
+Computes depth from root for each node in a hierarchy DAG:
+
+```python
+from ado_odata_async import compute_hierarchy_depth
+
+links = [
+    {"SourceWorkItemId": 10, "TargetWorkItemId": 11},
+    {"SourceWorkItemId": 11, "TargetWorkItemId": 12},
+]
+
+depth = compute_hierarchy_depth(links)
+print(depth)  # {10: 0, 11: 1, 12: 2}
+```
+
+Root nodes (those never referenced as a target) get depth 0. Depth is capped at 100.
+
+### Dependency Links — `fetch_dependency_links`
+
+Fetches dependency links for a set of work items and builds a dependency map:
+
+```python
+import asyncio
+from ado_odata_async import AdoODataClient, fetch_dependency_links
+
+async def main() -> None:
+    async with AdoODataClient(
+        org="myorg", project="myproject", pat="your-pat"
+    ) as client:
+        deps = await fetch_dependency_links(
+            client,
+            [100, 101, 102],
+            resolve_titles=True,
+            flag_overdue=True,
+        )
+        for wid, entry in deps.items():
+            print(f"WorkItem {wid}:")
+            print(f"  depends_on: {entry['depends_on']}")
+            print(f"  blocks:      {entry['blocks']}")
+            print(f"  risk_flags:  {entry['risk_flags']}")
+
+asyncio.run(main())
+```
+
+The returned dict maps each work item ID to `{"depends_on": [...], "blocks": [...], "risk_flags": [...]}`. Optional parameters `resolve_titles` and `flag_overdue` enrich the output with titles and overdue flags.
+
+---
+
 ## Docs index
 
 | Doc | What's inside | Open this when… |
@@ -252,6 +396,7 @@ Cliente Python assíncrono para Azure DevOps Analytics OData.
 - [Início rápido](#início-rápido)
 - [Exemplo de saída](#exemplo-de-saída)
 - [Uso](#uso)
+- [Métricas de Fluxo e Análise de Entrega](#métricas-de-fluxo-e-análise-de-entrega)
 - [Índice da documentação](#índice-da-documentação)
 - [Solução de problemas](#solução-de-problemas)
 - [Licença](#licença)
@@ -414,6 +559,149 @@ async for page in client.query("WorkItems").select("WorkItemId", "Title").pagina
     for item in page.get("value", []):
         print(item["WorkItemId"], item["Title"])
 ```
+
+---
+
+## Métricas de Fluxo e Análise de Entrega
+
+Além das consultas OData diretas, a biblioteca oferece funções de análise para métricas de entrega. Estas funções processam dados que você já obteve (ex.: via `client.get()` ou `paginate()`).
+
+### Plan History — `compute_plan_history`
+
+```python
+from ado_odata_async import compute_plan_history
+
+items = [
+    {"CreatedDate": "2025-01-10", "StateCategory": "Completed",
+     "TargetDate": "2025-06-30", "CompletedDate": "2025-06-15"},
+    {"CreatedDate": "2025-02-01", "StateCategory": "InProgress",
+     "TargetDate": None, "CompletedDate": None},
+]
+
+result = compute_plan_history(items)
+print(result.created_date)       # 2025-01-10
+print(result.oldest_card_date)   # 2025-02-01
+print(result.on_time_rate)       # 1.0
+```
+
+`PlanHistoryResult` tem três campos:
+- `created_date` — `CreatedDate` mais antiga entre todos os itens
+- `oldest_card_date` — `CreatedDate` mais antiga entre itens ativos (não-Completed), ou `None`
+- `on_time_rate` — fração de itens concluídos com `TargetDate` que terminaram dentro ou antes do prazo (0.0 a 1.0)
+
+### Baseline — `compute_baseline_metrics`
+
+Detecta replanejamento examinando mudanças de `TargetDate` no histórico de revisões:
+
+```python
+from ado_odata_async import compute_baseline_metrics
+
+revisions = [
+    {"TargetDate": "2025-06-30"},
+    {"TargetDate": "2025-07-15"},
+    {"TargetDate": "2025-07-15"},
+]
+
+result = compute_baseline_metrics(revisions)
+print(result.original_target_date)  # "2025-06-30"
+print(result.target_date_changes)   # 1
+print(result.replanned)             # True
+```
+
+`BaselineResult` tem três campos:
+- `original_target_date` — primeiro valor de `TargetDate` em ordem cronológica, ou `None`
+- `target_date_changes` — quantidade de mudanças entre revisões consecutivas
+- `replanned` — `True` quando `target_date_changes > 0`
+
+### Flow Times — `compute_flow_times`
+
+Calcula tempo de fila e tempo em progresso a partir do histórico de revisões:
+
+```python
+from ado_odata_async import compute_flow_times
+
+revisions = [
+    {"State": "New", "ChangedDate": "2025-01-10"},
+    {"State": "Active", "ChangedDate": "2025-01-15"},
+    {"State": "Resolved", "ChangedDate": "2025-01-20"},
+    {"State": "Closed", "ChangedDate": "2025-01-22"},
+]
+
+result = compute_flow_times(revisions)
+print(result.time_in_queue_days)      # 5
+print(result.time_in_progress_days)   # 5
+print(result.state_history[0])        # ("New", date(2025, 1, 10))
+```
+
+`FlowTimeResult` tem três campos:
+- `state_history` — lista ordenada de tuplas `(State, ChangedDate)`
+- `time_in_queue_days` — dias da criação até o primeiro estado ativo, ou `None`
+- `time_in_progress_days` — total de dias em estados ativos
+
+Estados ativos reconhecidos: `["Active", "In Progress", "Committed", "Design"]`.
+
+### Child Count — `compute_child_count`
+
+Conta filhos diretos por pai a partir de dados `WorkItemLinks`:
+
+```python
+from ado_odata_async import compute_child_count
+
+links = [
+    {"SourceWorkItemId": 100, "TargetWorkItemId": 101},
+    {"SourceWorkItemId": 100, "TargetWorkItemId": 102},
+]
+
+counts = compute_child_count(links)
+print(counts)  # {100: 2}
+```
+
+### Hierarchy Depth — `compute_hierarchy_depth`
+
+Calcula a profundidade a partir da raiz para cada nó em um DAG de hierarquia:
+
+```python
+from ado_odata_async import compute_hierarchy_depth
+
+links = [
+    {"SourceWorkItemId": 10, "TargetWorkItemId": 11},
+    {"SourceWorkItemId": 11, "TargetWorkItemId": 12},
+]
+
+depth = compute_hierarchy_depth(links)
+print(depth)  # {10: 0, 11: 1, 12: 2}
+```
+
+Nós raiz (que nunca aparecem como alvo) recebem profundidade 0. A profundidade máxima é 100.
+
+### Dependency Links — `fetch_dependency_links`
+
+Obtém links de dependência para um conjunto de work items e monta um mapa de dependências:
+
+```python
+import asyncio
+from ado_odata_async import AdoODataClient, fetch_dependency_links
+
+async def main() -> None:
+    async with AdoODataClient(
+        org="myorg", project="myproject", pat="your-pat"
+    ) as client:
+        deps = await fetch_dependency_links(
+            client,
+            [100, 101, 102],
+            resolve_titles=True,
+            flag_overdue=True,
+        )
+        for wid, entry in deps.items():
+            print(f"WorkItem {wid}:")
+            print(f"  depends_on: {entry['depends_on']}")
+            print(f"  blocks:      {entry['blocks']}")
+            print(f"  risk_flags:  {entry['risk_flags']}")
+
+asyncio.run(main())
+```
+
+O dicionário retornado mapeia cada ID de work item para `{"depends_on": [...], "blocks": [...], "risk_flags": [...]}`. Os parâmetros opcionais `resolve_titles` e `flag_overdue` enriquecem a saída com títulos e flags de atraso.
 
 ---
 
